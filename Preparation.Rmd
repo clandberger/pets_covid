@@ -1,0 +1,2377 @@
+---
+title: "Pet ownership and mental health in the time of Covid-19 - preparation"
+author: "Christoffer Landberger"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#-------- DATA CLEANING / PREPARATION --------
+
+
+
+#Installing/loading relevant packages.
+
+```{r Installing/loading relevant packages}
+
+# Install packages if relevant
+
+devtools::install_github("easystats/report")
+
+if(!require(tinytex)){
+    install.packages("tinytex")
+    library(tinytex)
+}
+
+if(!require(tidyverse)){
+    install.packages("tidyverse")
+    library(tidyverse)
+}
+
+if(!require(tidytext)){
+    install.packages("tidytext")
+    library(tidytext)
+}
+
+if(!require(SnowballC)){
+    install.packages("SnowballC")
+    library(SnowballC)
+}
+
+if(!require(remotes)){
+    install.packages("remotes")
+    library(remotes)
+}
+
+if(!require(devtools)){
+    install.packages("devtools")
+    library(devtools)
+}
+
+if(!require(gtsummary)){
+    install.packages("gtsummary")
+    library(gtsummary)
+}
+
+if(!require(ggplot2)){
+    install.packages("ggplot2")
+    library(ggplot2)
+}
+
+if(!require(reshape2)){
+    install.packages("reshape2")
+    library(reshape2)
+}
+
+if(!require(yarrr)){
+    install.packages("yarrr")
+    library(yarrr)
+}
+
+if(!require(MuMIn)){
+    install.packages("MuMIn")
+    library(MuMIn)
+}
+
+if(!require(ordinal)){
+    install.packages("ordinal")
+    library(ordinal)
+}
+
+if(!require(tinytex)){
+    install.packages("tinytex")
+    library(tinytex)
+}
+
+if(!require(gt)){
+    install.packages("gt")
+    library(gt)
+}
+
+if(!require(lmerTest)){
+    install.packages("lmerTest")
+    library(lmerTest)
+}
+
+if(!require(report)){
+    install.packages("report")
+    library(report)
+}
+
+if(!require(Rcpp)){
+    install.packages("Rcpp")
+    library(Rcpp)
+}
+
+if(!require(sjPlot)){
+    install.packages("sjPlot")
+    library(sjPlot)
+}
+
+remove(list = ls())
+
+source("../file_paths.R")
+source("./libraries.R")
+
+```
+
+#Loading data sets.
+
+```{r Loading data sets}
+
+# Load data sets
+baseline_dummy_data <- readRDS(file = paste0(data_save_path,"/Pets_2021/Pets_baseline_dataset_2021.rds"))
+threemonths_dummy_data <- readRDS(file = paste0(data_save_path,"/Pets_2021/Pets_3month_dataset_2021.rds"))
+sixmonths_dummy_data <- readRDS(file = paste0(data_save_path,"/Pets_2021/Pets_6month_dataset_2021.rds"))
+twelvemonths_dummy_data <- readRDS(file = paste0(data_save_path,"/Pets_2021/Pets_12month_dataset_2021.rds"))
+petfoster_dummy_data <- readRDS(file = paste0(data_save_path,"/Pets_2021/pet_fostering_all.rds"))
+
+```
+
+#Replace -77 values with NA's (only relevant for dummy data).
+
+```{r Replace -77 with NAs}
+
+# (Only relevant for dummy data) Change -77 values to NA's
+baseline_dummy_data <- baseline_dummy_data %>%
+    replace(., . == -77, NA)
+threemonths_dummy_data <- threemonths_dummy_data %>%
+    replace(., . == -77, NA)
+sixmonths_dummy_data <- sixmonths_dummy_data %>%
+    replace(., . == -77, NA)
+twelvemonths_dummy_data <- twelvemonths_dummy_data %>%
+    replace(., . == -77, NA)
+petfoster_dummy_data <- petfoster_dummy_data %>%
+    replace(., . == -77, NA)
+
+```
+
+#Remove "duplicate"/irrelevant columns (by name so it won't cause problems with real data).
+
+```{r Remove "duplicate"/irrelevant columns}
+
+# Baseline data
+baseline_dummy_data <-
+  subset(baseline_dummy_data,
+         select = -c(dem2.what_is_your_current_maritalrelationship_status,
+                     dem2.living_alone.1,
+                     dem2.living_with_partner_or_spouse.1,
+                     dem2.living_with_housemates.1,
+                     dem2.age_children_living.2,
+                     dem2.living_with_other_members_of_my_family.1,
+                     dem2.spouse_members_partner_living.1,
+                     dem2.prefer_not_to_say.1,
+                     dem2.none,
+                     dem2.02_years,
+                     dem2.35_years,
+                     dem2.610_years,
+                     dem2.1115_years,
+                     dem2.1618_years,
+                     dem2.prefer_not_to_say.2,
+                     dem2.adult_children_pandemic_returned,
+                     dem2.adult_children_pandemic_returned.txt,
+                     dem2.household_living_place_answer,
+                     dem2.do_you_have_any_children,
+                     employ.are_you_currently_working_from_home,
+                     mhq.depression,
+                     mhq.pregnancy_depression,
+                     mhq.premenstrual_dysphoric_disorder_pmdd,
+                     mhq.mania_hypomania_bipolar_or_manicdepression,
+                     mhq.anxiety_nerves_or_generalised_anxiety_disorder,
+                     mhq.social_anxiety_or_social_phobia,
+                     mhq.specific_phobia_e.g._phobia_of_flying,
+                     mhq.agoraphobia,
+                     mhq.panic_disorder,
+                     mhq.panic_attacks,
+                     mhq.posttraumatic_stress_disorder_ptsd,
+                     mhq.obsessivecompulsive_disorder_ocd,
+                     mhq.body_dysmorphic_disorder_bdd,
+                     mhq.skin_picking_obsessive_compulsive,
+                     mhq.obsessive_compulsive_related_disorder.txt,
+                     mhq.none_of_these,
+                     mhq.dont_know,
+                     mhq.prefer_not_to_answer,
+                     mhq.anorexia_nervosa,
+                     mhq.atypical_anorexia_nervosa,
+                     mhq.bulimia_nervosa,
+                     mhq.psychological_overeating_or_bingeeating_disorder,
+                     mhq.schizophrenia,
+                     mhq.schizoaffective_disorder,
+                     mhq.psychosis_type_psychotic_illness,
+                     mhq.personality_disorder,
+                     mhq.autism_aspergers_or_autistic_spectrum_disorder,
+                     mhq.attention_deficit_hyperactivity_disorder,
+                     mhq.other_please_tell_us_more,
+                     mhq.other_please_tell_us_more_text.txt,
+                     mhq.none_of_these.1,
+                     mhq.dont_know.1,
+                     mhq.prefer_not_to_answer.1,
+                     mhq.personality_disorder_diagnosed,
+                     phq.pandemic_feelings_felt,
+                     phq.pandemic_feelings_felt.1,
+                     phq.little_interest_or_pleasure_in_doing_things.1,
+                     phq.feeling_down_depressed_or_hopeless.1,
+                     phq.staying_asleep_sleeping_trouble.1,
+                     phq.feeling_tired_or_having_little_energy.1,
+                     phq.poor_appetite_or_overeating.1,
+                     phq.feeling_bad_failure_family.1,
+                     phq.trouble_concentrating_newspaper_reading.1,
+                     phq.moving_fidgety_opposite_slowly.1,
+                     phq.dead_hurting_thoughts.1,
+                     gad7.pandemic_feelings_felt,
+                     gad7.feeling_nervous_anxious_or_on_edge.1,
+                     gad7.control_worrying_stop.1,
+                     gad7.worrying_too_much_about_different_things.1,
+                     gad7.trouble_relaxing.1,
+                     gad7.sit_hard_restless.1,
+                     gad7.becoming_easily_annoyed_or_irritable.1,
+                     gad7.awful_feeling_afraid_happen.1,
+                     gad7.issues_made_carrying_daily,
+                     masq.pandemic_feelings_felt,
+                     masq.felt_successful.1,
+                     masq.felt_really_happy.1,
+                     masq.felt_optimistic.1,
+                     masq.fun_lot_felt.1,
+                     masq.felt_like_i_accomplished_a_lot.1,
+                     masq.forward_lot_felt.1,
+                     masq.felt_really_talkative.1,
+                     masq.felt_really_up_or_lively.1,
+                     masq.energy_lot_felt.1,
+                     masq.felt_really_good_about_myself.1,
+                     selfcar.exercised.1,
+                     selfcar.maintained_your_normal_daily_structure.1,
+                     lone.similar_felt_pandemic,
+                     lone.felt_that_you_lack_companionship.1,
+                     lone.felt_left_out.1,
+                     lone.felt_isolated_from_others.1,
+                     lone.felt_alone.1))
+
+# Three months data
+threemonths_dummy_data <-
+  subset(threemonths_dummy_data,
+         select = -c(dem.staying_live,
+                     dem.staying_live.1,
+                     dem.how_many_individuals_live_in_your_household_,
+                     phq9.difficult_daily_life_issues,
+                     gad7.difficult_daily_life_issues,
+                     beh.fostered_an_animal_in_need,
+                     beh.taken_on_ownership_a_pet,
+                     selfcare.exercised.1,
+                     selfcare.maintained_your_normal_daily_structure.1))
+
+# Six months data
+sixmonths_dummy_data <-
+  subset(sixmonths_dummy_data,
+         select = -c(dem.staying_live,
+                     dem.staying_live.1,
+                     dem.how_many_individuals_live_in_your_household_,
+                     phq9.difficult_daily_life_issues,
+                     gad7.difficult_daily_life_issues,
+                     beh.fostered_an_animal_in_need,
+                     beh.taken_on_ownership_a_pet,
+                     selfcare.exercised.1,
+                     selfcare.maintained_your_normal_daily_structure.1))
+
+# Twelve months data
+twelvemonths_dummy_data <-
+  subset(twelvemonths_dummy_data,
+         select = -c(dem.staying_live,
+                     dem.staying_live.1,
+                     dem.how_many_individuals_live_in_your_household_,
+                     phq9.difficult_daily_life_issues,
+                     gad7.difficult_daily_life_issues,
+                     beh.fostered_an_animal_in_need,
+                     beh.taken_on_ownership_a_pet,
+                     selfcare.exercised.1,
+                     selfcare.maintained_your_normal_daily_structure.1))
+
+```
+
+#Converting PAQ-9 and GAD-7 answers so that:
+
+"Not at all"              = "0"
+"Several Days"            = "1"
+"More than half the days" = "2"
+"Nearly every day"        = "3"
+
+```{r Converting PAQ-9 and GAD-7 answers}
+
+# Converting PAQ-9 and GAD-7 answers for baseline data
+baseline_dummy_data <- baseline_dummy_data %>%
+  mutate(
+    across(
+      starts_with(c("phq","gad7")), 
+      .fns = ~case_when(
+        .x %in% c("Not at all") ~ 0,
+        .x %in% c("Several days") ~ 1,
+        .x %in% c("More than half the days") ~ 2,
+        .x %in% c("Nearly every day") ~ 3)),
+    .keep = "all")
+
+# Converting PAQ-9 and GAD-7 answers for 3 month follow up
+threemonths_dummy_data <- threemonths_dummy_data %>%
+  mutate(
+    across(
+      starts_with(c("phq","gad")), 
+      .fns = ~case_when(
+        .x %in% c("Not at all") ~ 0,
+        .x %in% c("Several days") ~ 1,
+        .x %in% c("More than half the days") ~ 2,
+        .x %in% c("Nearly every day") ~ 3)),
+    .keep = "all")
+
+# Converting PAQ-9 and GAD-7 answers for 6 month follow up
+sixmonths_dummy_data <- sixmonths_dummy_data %>%
+  mutate(
+    across(
+      starts_with(c("phq","gad")), 
+      .fns = ~case_when(
+        .x %in% c("Not at all") ~ 0,
+        .x %in% c("Several days") ~ 1,
+        .x %in% c("More than half the days") ~ 2,
+        .x %in% c("Nearly every day") ~ 3)),
+    .keep = "all")
+
+# Converting GAD-7 answers for 12 month follow up (Note: PHQ-9 already as numbers)
+twelvemonths_dummy_data <- twelvemonths_dummy_data %>%
+  mutate(
+    across(
+      starts_with(c("gad7")), 
+      .fns = ~case_when(
+        .x %in% c("Not at all") ~ 0,
+        .x %in% c("Several days") ~ 1,
+        .x %in% c("More than half the days") ~ 2,
+        .x %in% c("Nearly every day") ~ 3)),
+    .keep = "all")
+
+```
+
+#Convert UCLA loneliness (4-item), MASQ-AD scores, and PHQ-9 (for 12 months follow-up) to numeric.
+
+```{r Convert UCLA loneliness (4-item), MASQ-AD scores, and PHQ-9 (for 12 months follow-up) to numeric}
+
+# Converting UCLA loneliness (4-item) columns to numeric
+baseline_dummy_data <- baseline_dummy_data %>%
+    mutate(
+      across(
+        starts_with("lone"), ~ as.numeric(as.character(.x))))
+threemonths_dummy_data <- threemonths_dummy_data %>%
+    mutate(
+      across(
+        starts_with("lonely"), ~ as.numeric(as.character(.x))))
+sixmonths_dummy_data <- sixmonths_dummy_data %>%
+    mutate(
+      across(
+        starts_with("lonely"), ~ as.numeric(as.character(.x))))
+twelvemonths_dummy_data <- twelvemonths_dummy_data %>%
+    mutate(
+      across(
+        starts_with("lonely"), ~ as.numeric(as.character(.x))))
+
+# Converting MASQ-AD columns to numeric
+baseline_dummy_data <- baseline_dummy_data %>%
+    mutate(
+      across(
+        starts_with("masq"), ~ as.numeric(as.character(.x))))
+threemonths_dummy_data <- threemonths_dummy_data %>%
+    mutate(
+      across(
+        starts_with("masq"), ~ as.numeric(as.character(.x))))
+sixmonths_dummy_data <- sixmonths_dummy_data %>%
+    mutate(
+      across(
+        starts_with("masq"), ~ as.numeric(as.character(.x))))
+twelvemonths_dummy_data <- twelvemonths_dummy_data %>%
+    mutate(
+      across(
+        starts_with("masq"), ~ as.numeric(as.character(.x))))
+
+# Convert PHQ-9 in 12 month follow up data to numeric - GAD-7 already numeric
+twelvemonths_dummy_data <- twelvemonths_dummy_data %>%
+    mutate(
+      across(starts_with("phq9"), ~ as.numeric(as.character(.x))))
+
+```
+
+#Converting UCLA loneliness (4-item) scores to be consistent with actual scale. Change so that:
+
+"1" -> "0"
+"2" -> "1"
+"3" -> "2"
+
+```{r Converting UCLA loneliness (4-item) scores}
+
+# Converting UCLA loneliness (4-item) answers for baseline data
+baseline_dummy_data <- baseline_dummy_data %>%
+  mutate(
+    across(
+      starts_with(c("lone")),
+      .fns = ~dplyr::case_when(
+        .x %in% 1 ~ 0,
+        .x %in% 2 ~ 1,
+        .x %in% 3 ~ 2)),
+    .keep = "all")
+  
+# Converting UCLA loneliness (4-item) answers for 3 month follow-up
+threemonths_dummy_data <- threemonths_dummy_data %>%
+  mutate(
+    across(
+      starts_with(c("lonely")),
+      .fns = ~dplyr::case_when(
+        .x %in% 1 ~ 0,
+        .x %in% 2 ~ 1,
+        .x %in% 3 ~ 2)),
+    .keep = "all")
+
+# Converting UCLA loneliness (4-item) answers for 6 month follow-up
+sixmonths_dummy_data <- sixmonths_dummy_data %>%
+  mutate(
+    across(
+      starts_with(c("lonely")),
+      .fns = ~dplyr::case_when(
+        .x %in% 1 ~ 0,
+        .x %in% 2 ~ 1,
+        .x %in% 3 ~ 2)),
+    .keep = "all")
+
+# Converting UCLA loneliness (4-item) answers for 12 month follow-up
+twelvemonths_dummy_data <- twelvemonths_dummy_data %>%
+  mutate(
+    across(
+      starts_with(c("lonely")),
+      .fns = ~dplyr::case_when(
+        .x %in% 1 ~ 0,
+        .x %in% 2 ~ 1,
+        .x %in% 3 ~ 2,
+        .x %in% 4 ~ 3,
+        .x %in% 5 ~ 4)),
+    .keep = "all")
+
+```
+
+#Converting MASQ-AD scores to be consistent with actual scale. Change so that:
+
+"1" -> "0"
+"2" -> "1"
+"3" -> "2"
+"4" -> "3"
+"5" -> "4"
+
+```{r Converting MASQ-AD scores}
+
+# Converting MASQ-AD answers for baseline data
+baseline_dummy_data <- baseline_dummy_data %>%
+  mutate(
+    across(
+      starts_with(c("masq")),
+      .fns = ~dplyr::case_when(
+        .x %in% 1 ~ 0,
+        .x %in% 2 ~ 1,
+        .x %in% 3 ~ 2,
+        .x %in% 4 ~ 3,
+        .x %in% 5 ~ 4)),
+    .keep = "all")
+  
+# Converting MASQ-AD answers for 3 month follow-up
+threemonths_dummy_data <- threemonths_dummy_data %>%
+  mutate(
+    across(
+      starts_with(c("masq")),
+      .fns = ~dplyr::case_when(
+        .x %in% 1 ~ 0,
+        .x %in% 2 ~ 1,
+        .x %in% 3 ~ 2,
+        .x %in% 4 ~ 3,
+        .x %in% 5 ~ 4)),
+    .keep = "all")
+
+# Converting MASQ-AD answers for 6 month follow-up
+sixmonths_dummy_data <- sixmonths_dummy_data %>%
+  mutate(
+    across(
+      starts_with(c("masq")),
+      .fns = ~dplyr::case_when(
+        .x %in% 1 ~ 0,
+        .x %in% 2 ~ 1,
+        .x %in% 3 ~ 2,
+        .x %in% 4 ~ 3,
+        .x %in% 5 ~ 4)),
+    .keep = "all")
+
+# Converting MASQ-AD answers for 12 month follow-up
+twelvemonths_dummy_data <- twelvemonths_dummy_data %>%
+  mutate(
+    across(
+      starts_with(c("masq")),
+      .fns = ~dplyr::case_when(
+        .x %in% 1 ~ 0,
+        .x %in% 2 ~ 1,
+        .x %in% 3 ~ 2,
+        .x %in% 4 ~ 3,
+        .x %in% 5 ~ 4)),
+    .keep = "all")
+
+```
+
+#Calculate missing mental health scores for baseline, 3 months, 6 months, and 12 months.
+
+```{r Calculate missing mental health scores}
+
+# Calculate missing PHQ-9 for baseline
+missing_phq_baseline <- baseline_dummy_data %>%
+  filter(
+    is.na(phq.little_interest_or_pleasure_in_doing_things) |
+      is.na(phq.feeling_down_depressed_or_hopeless) |
+      is.na(phq.staying_asleep_sleeping_trouble) |
+      is.na(phq.feeling_tired_or_having_little_energy) |
+      is.na(phq.poor_appetite_or_overeating) |
+      is.na(phq.feeling_bad_failure_family) |
+      is.na(phq.trouble_concentrating_newspaper_reading) |    
+      is.na(phq.moving_fidgety_opposite_slowly) |
+      is.na(phq.dead_hurting_thoughts)
+  ) # Filter
+nrow(missing_phq_baseline) # Sum
+nrow(missing_phq_baseline) / nrow(baseline_dummy_data) * 100 # Percentage
+
+# Calculate missing GAD-7 for baseline
+missing_gad_baseline <- baseline_dummy_data %>%
+  filter(
+    is.na(gad7.feeling_nervous_anxious_or_on_edge) |
+      is.na(gad7.control_worrying_stop) |
+      is.na(gad7.worrying_too_much_about_different_things) |
+      is.na(gad7.trouble_relaxing) |
+      is.na(gad7.sit_hard_restless) |
+      is.na(gad7.becoming_easily_annoyed_or_irritable) |
+      is.na(gad7.awful_feeling_afraid_happen)
+  ) # Filter
+nrow(missing_gad_baseline) # Sum
+nrow(missing_gad_baseline) / nrow(baseline_dummy_data) * 100 # Percentage
+
+# Calculate missing UCLA loneliess (4-item) for baseline
+missing_lone_baseline <- baseline_dummy_data %>%
+  filter(
+    is.na(lone.felt_that_you_lack_companionship) |
+      is.na(lone.felt_left_out) |
+      is.na(lone.felt_isolated_from_others) |
+      is.na(lone.felt_alone)
+  ) # Filter
+nrow(missing_lone_baseline) # Sum
+nrow(missing_lone_baseline) / nrow(baseline_dummy_data) * 100 # Percentage
+
+# Calculate missing MASQ-AD for baseline
+missing_masq_baseline <- baseline_dummy_data %>%
+  filter(
+    is.na(masq.felt_successful) |
+      is.na(masq.felt_really_happy) |
+      is.na(masq.felt_optimistic) |
+      is.na(masq.fun_lot_felt) |
+      is.na(masq.felt_like_i_accomplished_a_lot) |
+      is.na(masq.forward_lot_felt) |
+      is.na(masq.felt_really_talkative) |
+      is.na(masq.felt_really_up_or_lively) |
+      is.na(masq.energy_lot_felt) |
+      is.na(masq.felt_really_good_about_myself)
+  ) # Filter
+nrow(missing_gad_baseline) # Sum
+nrow(missing_gad_baseline) / nrow(baseline_dummy_data) * 100 # Percentage
+
+# Calculate missing PHQ-9 for 3 months follow-up
+missing_phq_3months <- threemonths_dummy_data %>%
+  filter(
+    is.na(phq9.little_interest_or_pleasure_in_doing_things) |
+      is.na(phq9.feeling_down_depressed_or_hopeless) |
+      is.na(phq9.sleeping_trouble_falling_asleep) |
+      is.na(phq9.feeling_tired_or_having_little_energy) |
+      is.na(phq9.poor_appetite_or_overeating) |
+      is.na(phq9.failure_feeling_bad_family) |
+      is.na(phq9.newspaper_reading_things_trouble) |    
+      is.na(phq9.moving_fidgety_opposite_slowly) |
+      is.na(phq9.dead_hurting_thoughts)
+  )
+nrow(missing_phq_3months)
+nrow(missing_phq_3months) / nrow(threemonths_dummy_data) * 100 # Percentage
+
+# Calculate missing GAD-7 for 3 months follow-up
+missing_gad_3months <- threemonths_dummy_data %>%
+  filter(
+    is.na(gad7.feeling_nervous_anxious_or_on_edge) |
+      is.na(gad7.control_worrying_stop) |
+      is.na(gad7.worrying_too_much_about_different_things) |
+      is.na(gad7.trouble_relaxing) |
+      is.na(gad7.sit_hard_restless) |
+      is.na(gad7.becoming_easily_annoyed_or_irritable) |
+      is.na(gad7.awful_happen_feeling_afraid)
+  ) # Filter
+nrow(missing_gad_3months) # Sum
+nrow(missing_gad_3months) / nrow(threemonths_dummy_data) * 100 # Percentage
+
+# Calculate missing UCLA loneliess (4-item) for 3 months follow-up
+missing_lone_3months <- threemonths_dummy_data %>%
+  filter(
+    is.na(lonely.felt_that_you_lack_companionship) |
+      is.na(lonely.felt_left_out) |
+      is.na(lonely.felt_isolated_from_others) |
+      is.na(lonely.felt_alone)
+  ) # Filter
+nrow(missing_lone_3months) # Sum
+nrow(missing_lone_3months) / nrow(threemonths_dummy_data) * 100 # Percentage
+
+# Calculate missing MASQ-AD for 3 months follow-up
+missing_masq_3months <- threemonths_dummy_data %>%
+  filter(
+    is.na(masq.felt_successful) |
+      is.na(masq.felt_really_happy) |
+      is.na(masq.felt_optimistic) |
+      is.na(masq.lot_felt_fun) |
+      is.na(masq.felt_like_i_accomplished_a_lot) |
+      is.na(masq.forward_lot_felt) |
+      is.na(masq.felt_really_talkative) |
+      is.na(masq.felt_really_up_or_lively) |
+      is.na(masq.lot_felt_energy) |
+      is.na(masq.felt_really_good_about_myself)
+  ) # Filter
+nrow(missing_masq_3months) # Sum
+nrow(missing_masq_3months) / nrow(threemonths_dummy_data) * 100 # Percentage
+
+# Calculate missing PHQ-9 for 6 months follow-up
+missing_phq_6months <- sixmonths_dummy_data %>%
+  filter(
+    is.na(phq9.little_interest_or_pleasure_in_doing_things) |
+      is.na(phq9.feeling_down_depressed_or_hopeless) |
+      is.na(phq9.sleeping_trouble_falling_asleep) |
+      is.na(phq9.feeling_tired_or_having_little_energy) |
+      is.na(phq9.poor_appetite_or_overeating) |
+      is.na(phq9.failure_feeling_bad_family) |
+      is.na(phq9.newspaper_reading_things_trouble) |    
+      is.na(phq9.moving_fidgety_opposite_slowly) |
+      is.na(phq9.dead_hurting_thoughts)
+  )
+nrow(missing_phq_6months)
+nrow(missing_phq_6months) / nrow(sixmonths_dummy_data) * 100 # Percentage
+
+# Calculate missing GAD-7 for 6 months follow-up
+missing_gad_6months <- sixmonths_dummy_data %>%
+  filter(
+    is.na(gad7.feeling_nervous_anxious_or_on_edge) |
+      is.na(gad7.control_worrying_stop) |
+      is.na(gad7.worrying_too_much_about_different_things) |
+      is.na(gad7.trouble_relaxing) |
+      is.na(gad7.sit_hard_restless) |
+      is.na(gad7.becoming_easily_annoyed_or_irritable) |
+      is.na(gad7.awful_happen_feeling_afraid)
+  ) # Filter
+nrow(missing_gad_6months) # Sum
+nrow(missing_gad_6months) / nrow(sixmonths_dummy_data) * 100 # Percentage
+
+# Calculate missing UCLA loneliess (4-item) for 6 months follow-up
+missing_lone_6months <- sixmonths_dummy_data %>%
+  filter(
+    is.na(lonely.felt_that_you_lack_companionship) |
+      is.na(lonely.felt_left_out) |
+      is.na(lonely.felt_isolated_from_others) |
+      is.na(lonely.felt_alone)
+  ) # Filter
+nrow(missing_lone_6months) # Sum
+nrow(missing_lone_6months) / nrow(sixmonths_dummy_data) * 100 # Percentage
+
+# Calculate missing MASQ-AD for 6 months follow-up
+missing_masq_6months <- sixmonths_dummy_data %>%
+  filter(
+    is.na(masq.felt_successful) |
+      is.na(masq.felt_really_happy) |
+      is.na(masq.felt_optimistic) |
+      is.na(masq.lot_felt_fun) |
+      is.na(masq.felt_like_i_accomplished_a_lot) |
+      is.na(masq.forward_lot_felt) |
+      is.na(masq.felt_really_talkative) |
+      is.na(masq.felt_really_up_or_lively) |
+      is.na(masq.lot_felt_energy) |
+      is.na(masq.felt_really_good_about_myself)
+  ) # Filter
+nrow(missing_masq_6months) # Sum
+nrow(missing_masq_6months) / nrow(sixmonths_dummy_data) * 100 # Percentage
+
+# Calculate missing PHQ-9 for 12 months follow-up
+missing_phq_12months <- twelvemonths_dummy_data %>%
+  filter(
+    is.na(phq9.little_interest_or_pleasure_in_doing_things) |
+      is.na(phq9.feeling_down_depressed_or_hopeless) |
+      is.na(phq9.sleeping_trouble_falling_asleep) |
+      is.na(phq9.feeling_tired_or_having_little_energy) |
+      is.na(phq9.poor_appetite_or_overeating) |
+      is.na(phq9.failure_feeling_bad_family) |
+      is.na(phq9.newspaper_reading_things_trouble) |    
+      is.na(phq9.moving_fidgety_opposite_slowly) |
+      is.na(phq9.dead_hurting_thoughts)
+  )
+nrow(missing_phq_12months)
+nrow(missing_phq_12months) / nrow(twelvemonths_dummy_data) * 100 # Percentage
+
+# Calculate missing GAD-7 for 12 months follow-up
+missing_gad_12months <- twelvemonths_dummy_data %>%
+  filter(
+    is.na(gad7.feeling_nervous_anxious_or_on_edge) |
+      is.na(gad7.control_worrying_stop) |
+      is.na(gad7.worrying_too_much_about_different_things) |
+      is.na(gad7.trouble_relaxing) |
+      is.na(gad7.sit_hard_restless) |
+      is.na(gad7.becoming_easily_annoyed_or_irritable) |
+      is.na(gad7.awful_happen_feeling_afraid)
+  ) # Filter
+nrow(missing_gad_12months) # Sum
+nrow(missing_gad_12months) / nrow(twelvemonths_dummy_data) * 100 # Percentage
+
+# Calculate missing UCLA loneliess (4-item) for 12 months follow-up
+missing_lone_12months <- twelvemonths_dummy_data %>%
+  filter(
+    is.na(lonely.felt_that_you_lack_companionship) |
+      is.na(lonely.felt_left_out) |
+      is.na(lonely.felt_isolated_from_others) |
+      is.na(lonely.felt_alone)
+  ) # Filter
+nrow(missing_lone_12months) # Sum
+nrow(missing_lone_12months) / nrow(twelvemonths_dummy_data) * 100 # Percentage
+
+# Calculate missing MASQ-AD for 12 months follow-up
+missing_masq_12months <- twelvemonths_dummy_data %>%
+  filter(
+    is.na(masq.felt_successful) |
+      is.na(masq.felt_really_happy) |
+      is.na(masq.felt_optimistic) |
+      is.na(masq.lot_felt_fun) |
+      is.na(masq.felt_like_i_accomplished_a_lot) |
+      is.na(masq.forward_lot_felt) |
+      is.na(masq.felt_really_talkative) |
+      is.na(masq.felt_really_up_or_lively) |
+      is.na(masq.lot_felt_energy) |
+      is.na(masq.felt_really_good_about_myself)
+  ) # Filter
+nrow(missing_masq_12months) # Sum
+nrow(missing_masq_12months) / nrow(twelvemonths_dummy_data) * 100 # Percentage
+
+```
+
+#Calculate PHQ-9, GAD-7, UCLA loneliness (4-item), and MASQ-AD scores for each participant.
+#Scores are made NA's (excluded) if one or more items on each scale is missing.
+
+```{r Calculate PHQ-9, GAD-7, UCLA loneliness (4-item), and MASQ-AD scores (exclude if NA)}
+
+# Calculate PHQ-9 scores for each participant and create a column witht these scores for each dataframe.
+baseline_dummy_data$Score_phq_baseline <- rowSums(baseline_dummy_data %>%
+                                                    select(
+                                                      starts_with("phq")),
+                                                    na.rm = FALSE)
+threemonths_dummy_data$Score_phq_threemonths <- rowSums(threemonths_dummy_data %>%
+                                                    select(
+                                                      starts_with("phq")),
+                                                    na.rm = FALSE)
+sixmonths_dummy_data$Score_phq_sixmonths <- rowSums(sixmonths_dummy_data %>%
+                                                    select(
+                                                      starts_with("phq")),
+                                                    na.rm = FALSE)
+twelvemonths_dummy_data$Score_phq_twelvemonths <- rowSums(twelvemonths_dummy_data %>%
+                                                    select(
+                                                      starts_with("phq9")),
+                                                    na.rm = FALSE)
+
+# Calculate GAD-7 scores for each participant and create a column witht these scores for each dataframe.
+baseline_dummy_data$Score_gad_baseline <- rowSums(baseline_dummy_data %>%
+                                                    select(
+                                                      starts_with("gad7")),
+                                                    na.rm = FALSE)
+threemonths_dummy_data$Score_gad_threemonths <- rowSums(threemonths_dummy_data %>%
+                                                    select(
+                                                      starts_with("gad")),
+                                                    na.rm = FALSE)
+sixmonths_dummy_data$Score_gad_sixmonths <- rowSums(sixmonths_dummy_data %>%
+                                                    select(
+                                                      starts_with("gad")),
+                                                    na.rm = FALSE)
+twelvemonths_dummy_data$Score_gad_twelvemonths <- rowSums(twelvemonths_dummy_data %>%
+                                                    select(
+                                                      starts_with("gad7")),
+                                                    na.rm = FALSE)
+
+# Calculate UCLA loneliness (4-item) scores for each participant and create a column witht these scores for each dataframe.
+baseline_dummy_data$Score_lone_baseline <- rowSums(baseline_dummy_data %>%
+                                                    select(
+                                                      starts_with("lone")),
+                                                    na.rm = FALSE)
+threemonths_dummy_data$Score_lone_threemonths <- rowSums(threemonths_dummy_data %>%
+                                                    select(
+                                                      starts_with("lonely")),
+                                                    na.rm = FALSE)
+sixmonths_dummy_data$Score_lone_sixmonths <- rowSums(sixmonths_dummy_data %>%
+                                                    select(
+                                                      starts_with("lonely")),
+                                                    na.rm = FALSE)
+twelvemonths_dummy_data$Score_lone_twelvemonths <- rowSums(twelvemonths_dummy_data %>%
+                                                    select(
+                                                      starts_with("lonely")),
+                                                    na.rm = FALSE)
+
+# Calculate MASQ-ad scores for each participant and create a column witht these scores for each dataframe.
+baseline_dummy_data$Score_masq_baseline <- rowSums(baseline_dummy_data %>%
+                                                    select(
+                                                      starts_with("masq")),
+                                                    na.rm = FALSE)
+threemonths_dummy_data$Score_masq_threemonths <- rowSums(threemonths_dummy_data %>%
+                                                    select(
+                                                      starts_with("masq")),
+                                                    na.rm = FALSE)
+sixmonths_dummy_data$Score_masq_sixmonths <- rowSums(sixmonths_dummy_data %>%
+                                                    select(
+                                                      starts_with("masq")),
+                                                    na.rm = FALSE)
+twelvemonths_dummy_data$Score_masq_twelvemonths <- rowSums(twelvemonths_dummy_data %>%
+                                                    select(
+                                                      starts_with("masq")),
+                                                    na.rm = FALSE)
+```
+
+#Remove columns used to calculate scores (by name so it won't cause problems with real data).
+
+```{r Remove columns used to calculate scores}
+
+# Remove for baseline
+baseline_dummy_data <-
+  subset(baseline_dummy_data,
+         select = -c(phq.little_interest_or_pleasure_in_doing_things,
+                     phq.feeling_down_depressed_or_hopeless,
+                     phq.staying_asleep_sleeping_trouble,
+                     phq.feeling_tired_or_having_little_energy,
+                     phq.poor_appetite_or_overeating,
+                     phq.feeling_bad_failure_family,
+                     phq.trouble_concentrating_newspaper_reading,
+                     phq.moving_fidgety_opposite_slowly,
+                     phq.dead_hurting_thoughts,
+                     gad7.feeling_nervous_anxious_or_on_edge,
+                     gad7.control_worrying_stop,
+                     gad7.worrying_too_much_about_different_things,
+                     gad7.trouble_relaxing,
+                     gad7.sit_hard_restless,
+                     gad7.becoming_easily_annoyed_or_irritable,
+                     gad7.awful_feeling_afraid_happen,
+                     masq.felt_successful,
+                     masq.felt_really_happy,
+                     masq.felt_optimistic,
+                     masq.fun_lot_felt,
+                     masq.felt_like_i_accomplished_a_lot,
+                     masq.forward_lot_felt,
+                     masq.felt_really_talkative,
+                     masq.felt_really_up_or_lively,
+                     masq.energy_lot_felt,
+                     masq.felt_really_good_about_myself,
+                     lone.felt_that_you_lack_companionship,
+                     lone.felt_left_out,
+                     lone.felt_isolated_from_others,
+                     lone.felt_alone))
+
+# Remove for 3 months
+threemonths_dummy_data <- 
+  subset(threemonths_dummy_data,
+         select = -c(phq9.little_interest_or_pleasure_in_doing_things,
+                     phq9.feeling_down_depressed_or_hopeless,
+                     phq9.sleeping_trouble_falling_asleep,
+                     phq9.feeling_tired_or_having_little_energy,
+                     phq9.poor_appetite_or_overeating,
+                     phq9.failure_feeling_bad_family,
+                     phq9.newspaper_reading_things_trouble,
+                     phq9.moving_fidgety_opposite_slowly,
+                     phq9.dead_hurting_thoughts,
+                     gad7.feeling_nervous_anxious_or_on_edge,
+                     gad7.control_worrying_stop,
+                     gad7.worrying_too_much_about_different_things,
+                     gad7.trouble_relaxing,
+                     gad7.sit_hard_restless,
+                     gad7.becoming_easily_annoyed_or_irritable,
+                     gad7.awful_happen_feeling_afraid,
+                     masq.felt_successful,
+                     masq.felt_really_happy,
+                     masq.felt_optimistic,
+                     masq.lot_felt_fun,
+                     masq.felt_like_i_accomplished_a_lot,
+                     masq.forward_lot_felt,
+                     masq.felt_really_talkative,
+                     masq.felt_really_up_or_lively,
+                     masq.lot_felt_energy,
+                     masq.felt_really_good_about_myself,
+                     lonely.felt_that_you_lack_companionship,
+                     lonely.felt_left_out,
+                     lonely.felt_isolated_from_others,
+                     lonely.felt_alone))
+
+# Remove for 6 months
+sixmonths_dummy_data <- 
+  subset(sixmonths_dummy_data,
+         select = -c(phq9.little_interest_or_pleasure_in_doing_things,
+                     phq9.feeling_down_depressed_or_hopeless,
+                     phq9.sleeping_trouble_falling_asleep,
+                     phq9.feeling_tired_or_having_little_energy,
+                     phq9.poor_appetite_or_overeating,
+                     phq9.failure_feeling_bad_family,
+                     phq9.newspaper_reading_things_trouble,
+                     phq9.moving_fidgety_opposite_slowly,
+                     phq9.dead_hurting_thoughts,
+                     gad7.feeling_nervous_anxious_or_on_edge,
+                     gad7.control_worrying_stop,
+                     gad7.worrying_too_much_about_different_things,
+                     gad7.trouble_relaxing,
+                     gad7.sit_hard_restless,
+                     gad7.becoming_easily_annoyed_or_irritable,
+                     gad7.awful_happen_feeling_afraid,
+                     masq.felt_successful,
+                     masq.felt_really_happy,
+                     masq.felt_optimistic,
+                     masq.lot_felt_fun,
+                     masq.felt_like_i_accomplished_a_lot,
+                     masq.forward_lot_felt,
+                     masq.felt_really_talkative,
+                     masq.felt_really_up_or_lively,
+                     masq.lot_felt_energy,
+                     masq.felt_really_good_about_myself,
+                     lonely.felt_that_you_lack_companionship,
+                     lonely.felt_left_out,
+                     lonely.felt_isolated_from_others,
+                     lonely.felt_alone))
+
+# Remove for 12 months
+twelvemonths_dummy_data <- 
+  subset(twelvemonths_dummy_data,
+         select = -c(phq9.little_interest_or_pleasure_in_doing_things,
+                     phq9.feeling_down_depressed_or_hopeless,
+                     phq9.sleeping_trouble_falling_asleep,
+                     phq9.feeling_tired_or_having_little_energy,
+                     phq9.poor_appetite_or_overeating,
+                     phq9.failure_feeling_bad_family,
+                     phq9.newspaper_reading_things_trouble,
+                     phq9.moving_fidgety_opposite_slowly,
+                     phq9.dead_hurting_thoughts,
+                     gad7.feeling_nervous_anxious_or_on_edge,
+                     gad7.control_worrying_stop,
+                     gad7.worrying_too_much_about_different_things,
+                     gad7.trouble_relaxing,
+                     gad7.sit_hard_restless,
+                     gad7.becoming_easily_annoyed_or_irritable,
+                     gad7.awful_happen_feeling_afraid,
+                     masq.felt_successful,
+                     masq.felt_really_happy,
+                     masq.felt_optimistic,
+                     masq.lot_felt_fun,
+                     masq.felt_like_i_accomplished_a_lot,
+                     masq.forward_lot_felt,
+                     masq.felt_really_talkative,
+                     masq.felt_really_up_or_lively,
+                     masq.lot_felt_energy,
+                     masq.felt_really_good_about_myself,
+                     lonely.felt_that_you_lack_companionship,
+                     lonely.felt_left_out,
+                     lonely.felt_isolated_from_others,
+                     lonely.felt_alone))
+
+```
+
+#Create "living_with_someone" column for baseline
+
+```{r Create "living_with_someone" column - baseline}
+
+# Function to create a does not include
+'%!in%' <- function(x,y)!('%in%'(x,y))
+
+# Changing all living status to numeric (factors are tricky, so we convert to character first)
+# To character
+baseline_dummy_data[, c('dem2.living_alone',
+                       'dem2.living_with_partner_or_spouse',
+                       'dem2.living_with_housemates',
+                       'dem2.age_children_living',
+                       'dem2.living_children_under_the_age_of_18.1',
+                       'dem2.living_with_other_members_of_my_family',
+                       'dem2.spouse_members_partner_living',
+                       'dem2.prefer_not_to_say')] <- 
+  sapply(baseline_dummy_data[, c('dem2.living_alone',
+                       'dem2.living_with_partner_or_spouse',
+                       'dem2.living_with_housemates',
+                       'dem2.age_children_living',
+                       'dem2.living_children_under_the_age_of_18.1',
+                       'dem2.living_with_other_members_of_my_family',
+                       'dem2.spouse_members_partner_living',
+                       'dem2.prefer_not_to_say')], as.character)
+# To numeric
+baseline_dummy_data[, c('dem2.living_alone',
+                       'dem2.living_with_partner_or_spouse',
+                       'dem2.living_with_housemates',
+                       'dem2.age_children_living',
+                       'dem2.living_children_under_the_age_of_18.1',
+                       'dem2.living_with_other_members_of_my_family',
+                       'dem2.spouse_members_partner_living',
+                       'dem2.prefer_not_to_say')] <- 
+  sapply(baseline_dummy_data[, c('dem2.living_alone',
+                       'dem2.living_with_partner_or_spouse',
+                       'dem2.living_with_housemates',
+                       'dem2.age_children_living',
+                       'dem2.living_children_under_the_age_of_18.1',
+                       'dem2.living_with_other_members_of_my_family',
+                       'dem2.spouse_members_partner_living',
+                       'dem2.prefer_not_to_say')], as.numeric)
+
+# Create "living status" column
+baseline_dummy_data <- baseline_dummy_data %>%
+  mutate(Live_with_someone.baseline = 
+           ifelse(
+             dem2.prefer_not_to_say %!in% 1 |
+               all(
+                 is.na(dem2.living_alone) &
+                   is.na(dem2.living_with_partner_or_spouse) &
+                   is.na(dem2.living_with_housemates) &
+                   is.na(dem2.age_children_living) &
+                   is.na(dem2.living_children_under_the_age_of_18.1) &
+                   is.na(dem2.living_with_other_members_of_my_family) &
+                   is.na(dem2.spouse_members_partner_living) &
+                   is.na(dem2.prefer_not_to_say)),
+             ifelse(
+               dem2.living_alone %in% 1 & 
+               dem2.living_with_partner_or_spouse %!in% 1 &
+               dem2.living_with_housemates %!in% 1 &
+               dem2.age_children_living %!in% 1 & 
+               dem2.living_children_under_the_age_of_18.1 %!in% 1 &
+               dem2.living_with_other_members_of_my_family %!in% 1 &
+               dem2.spouse_members_partner_living %!in% 1,
+               0, 1), NA))
+
+# Delete "living status" columns used to create new one
+baseline_dummy_data <-
+  subset(baseline_dummy_data,
+         select = -c(dem2.living_alone,
+                       dem2.living_with_partner_or_spouse,
+                       dem2.living_with_housemates,
+                       dem2.age_children_living,
+                       dem2.living_children_under_the_age_of_18.1,
+                       dem2.living_with_other_members_of_my_family,
+                       dem2.spouse_members_partner_living,
+                       dem2.prefer_not_to_say))
+
+```
+
+#Create "living_with_someone" column for 3 months
+
+```{r Create "living_with_someone" column - 3 months}
+
+#. Changing all living status to numeric (factors are tricky, so we convert to character first)
+# To character
+threemonths_dummy_data[, c('dem.living_alone',
+                           'dem.living_with_partner_or_spouse',
+                           'dem.living_with_housemates',
+                           'dem.age_children_living',
+                           'dem.age_children_living.1',
+                           'dem.living_with_other_members_of_my_family',
+                           'dem.members_living_partner_spouse',
+                           'dem.prefer_not_to_say')] <-
+  sapply(threemonths_dummy_data[, c('dem.living_alone',
+                                    'dem.living_with_partner_or_spouse',
+                                    'dem.living_with_housemates',
+                                    'dem.age_children_living',
+                                    'dem.age_children_living.1',
+                                    'dem.living_with_other_members_of_my_family',
+                                    'dem.members_living_partner_spouse',
+                                    'dem.prefer_not_to_say')], as.character)
+# To numeric
+threemonths_dummy_data[, c('dem.living_alone',
+                           'dem.living_with_partner_or_spouse',
+                           'dem.living_with_housemates',
+                           'dem.age_children_living',
+                           'dem.age_children_living.1',
+                           'dem.living_with_other_members_of_my_family',
+                           'dem.members_living_partner_spouse',
+                           'dem.prefer_not_to_say')] <-
+  sapply(threemonths_dummy_data[, c('dem.living_alone',
+                           'dem.living_with_partner_or_spouse',
+                           'dem.living_with_housemates',
+                           'dem.age_children_living',
+                           'dem.age_children_living.1',
+                           'dem.living_with_other_members_of_my_family',
+                           'dem.members_living_partner_spouse',
+                           'dem.prefer_not_to_say')], as.numeric)
+
+# Create "living status" column
+threemonths_dummy_data <- threemonths_dummy_data %>%
+  mutate(Live_with_someone.3months =
+           ifelse(
+             dem.prefer_not_to_say %!in% 1 |
+               all(
+                 is.na(dem.living_alone) &
+                 is.na(dem.living_with_partner_or_spouse) &
+                 is.na(dem.living_with_housemates) &
+                 is.na(dem.age_children_living) &
+                 is.na(dem.age_children_living.1) &
+                 is.na(dem.living_with_other_members_of_my_family) &
+                 is.na(dem.members_living_partner_spouse) &
+                 is.na(dem.prefer_not_to_say)),
+             ifelse(
+               dem.living_alone %in% 1 & 
+                 dem.living_with_partner_or_spouse %!in% 1 &
+                 dem.living_with_housemates %!in% 1 &
+                 dem.age_children_living %!in% 1 & 
+                 dem.age_children_living.1 %!in% 1 &
+                 dem.living_with_other_members_of_my_family %!in% 1 &
+                 dem.members_living_partner_spouse %!in% 1,
+                 0, 1), NA))
+
+# Delete "living status" columns used to create new one
+threemonths_dummy_data <-
+  subset(threemonths_dummy_data,
+         select = -c(dem.living_alone,
+                     dem.living_with_partner_or_spouse,
+                     dem.living_with_housemates,
+                     dem.age_children_living,
+                     dem.age_children_living.1,
+                     dem.living_with_other_members_of_my_family,
+                     dem.members_living_partner_spouse,
+                     dem.prefer_not_to_say))
+
+```
+
+#Create "living_with_someone" column for 6 months
+
+```{r Create "living_with_someone" column - 6 months}
+
+# Changing all living status to numeric (factors are tricky, so we convert to character first)
+# To character
+sixmonths_dummy_data[, c('dem.living_alone',
+                           'dem.living_with_partner_or_spouse',
+                           'dem.living_with_housemates',
+                           'dem.age_children_living',
+                           'dem.age_children_living.1',
+                           'dem.living_with_other_members_of_my_family',
+                           'dem.members_living_partner_spouse',
+                           'dem.prefer_not_to_say')] <-
+  sapply(sixmonths_dummy_data[, c('dem.living_alone',
+                           'dem.living_with_partner_or_spouse',
+                           'dem.living_with_housemates',
+                           'dem.age_children_living',
+                           'dem.age_children_living.1',
+                           'dem.living_with_other_members_of_my_family',
+                           'dem.members_living_partner_spouse',
+                           'dem.prefer_not_to_say')], as.character)
+# To numeric
+sixmonths_dummy_data[, c('dem.living_alone',
+                           'dem.living_with_partner_or_spouse',
+                           'dem.living_with_housemates',
+                           'dem.age_children_living',
+                           'dem.age_children_living.1',
+                           'dem.living_with_other_members_of_my_family',
+                           'dem.members_living_partner_spouse',
+                           'dem.prefer_not_to_say')] <-
+  sapply(sixmonths_dummy_data[, c('dem.living_alone',
+                           'dem.living_with_partner_or_spouse',
+                           'dem.living_with_housemates',
+                           'dem.age_children_living',
+                           'dem.age_children_living.1',
+                           'dem.living_with_other_members_of_my_family',
+                           'dem.members_living_partner_spouse',
+                           'dem.prefer_not_to_say')], as.numeric)
+
+# Create "living status" column
+sixmonths_dummy_data <- sixmonths_dummy_data %>%
+  mutate(Live_with_someone.6months =
+           ifelse(
+             dem.prefer_not_to_say %!in% 1 |
+               all(
+                 is.na(dem.living_alone) &
+                 is.na(dem.living_with_partner_or_spouse) &
+                 is.na(dem.living_with_housemates) &
+                 is.na(dem.age_children_living) &
+                 is.na(dem.age_children_living.1) &
+                 is.na(dem.living_with_other_members_of_my_family) &
+                 is.na(dem.members_living_partner_spouse) &   
+                 is.na(dem.prefer_not_to_say)),
+             ifelse(
+               dem.living_alone %in% 1 & 
+               dem.living_with_partner_or_spouse %!in% 1 &
+               dem.living_with_housemates %!in% 1 &
+               dem.age_children_living %!in% 1 & 
+               dem.age_children_living.1 %!in% 1 &
+               dem.living_with_other_members_of_my_family %!in% 1 &
+               dem.members_living_partner_spouse %!in% 1,
+               0, 1), NA))
+
+# Delete "living status" columns used to create new one
+sixmonths_dummy_data <-
+  subset(sixmonths_dummy_data,
+         select = -c(dem.living_alone,
+                     dem.living_with_partner_or_spouse,
+                     dem.living_with_housemates,
+                     dem.age_children_living,
+                     dem.age_children_living.1,
+                     dem.living_with_other_members_of_my_family,
+                     dem.members_living_partner_spouse,
+                     dem.prefer_not_to_say))
+
+```
+
+#Create "living_with_someone" column for 12 months
+
+```{r Create "living_with_someone" column - 12 months}
+
+# Changing all living status to numeric (factors are tricky, so we convert to character first)
+# To character
+twelvemonths_dummy_data[, c('dem.living_alone',
+                            'dem.living_with_partner_or_spouse',
+                            'dem.living_with_housemates',
+                            'dem.age_children_living',
+                            'dem.age_children_living.1',
+                            'dem.living_with_other_members_of_my_family',
+                            'dem.members_living_partner_spouse',
+                            'dem.prefer_not_to_say')] <-
+  sapply(twelvemonths_dummy_data[, c('dem.living_alone',
+                            'dem.living_with_partner_or_spouse',
+                            'dem.living_with_housemates',
+                            'dem.age_children_living',
+                            'dem.age_children_living.1',
+                            'dem.living_with_other_members_of_my_family',
+                            'dem.members_living_partner_spouse',
+                            'dem.prefer_not_to_say')], as.character)
+# To numeric
+twelvemonths_dummy_data[, c('dem.living_alone',
+                            'dem.living_with_partner_or_spouse',
+                            'dem.living_with_housemates',
+                            'dem.age_children_living',
+                            'dem.age_children_living.1',
+                            'dem.living_with_other_members_of_my_family',
+                            'dem.members_living_partner_spouse',
+                            'dem.prefer_not_to_say')] <-
+  sapply(twelvemonths_dummy_data[, c('dem.living_alone',
+                            'dem.living_with_partner_or_spouse',
+                            'dem.living_with_housemates',
+                            'dem.age_children_living',
+                            'dem.age_children_living.1',
+                            'dem.living_with_other_members_of_my_family',
+                            'dem.members_living_partner_spouse',
+                            'dem.prefer_not_to_say')], as.numeric)
+
+# Create "living status" column
+twelvemonths_dummy_data <- twelvemonths_dummy_data %>%
+  mutate(Live_with_someone.12months =
+           ifelse(
+             dem.prefer_not_to_say %!in% 1 |
+               all(
+                 is.na(dem.living_alone) &
+                 is.na(dem.living_with_partner_or_spouse) &
+                 is.na(dem.living_with_housemates) &
+                 is.na(dem.age_children_living) &
+                 is.na(dem.age_children_living.1) &
+                 is.na(dem.living_with_other_members_of_my_family) &
+                 is.na(dem.members_living_partner_spouse) &
+                 is.na(dem.prefer_not_to_say)),
+             ifelse(
+               dem.living_alone %in% 1 & 
+                 dem.living_with_partner_or_spouse %!in% 1 &
+                 dem.living_with_housemates %!in% 1 &
+                 dem.age_children_living %!in% 1 & 
+                 dem.age_children_living.1 %!in% 1 &
+                 dem.living_with_other_members_of_my_family %!in% 1 &
+                 dem.members_living_partner_spouse %!in% 1,
+                 0, 1), NA))
+
+# Delete "living status" columns used to create new one
+twelvemonths_dummy_data <-
+  subset(twelvemonths_dummy_data,
+         select = -c(dem.living_alone,
+                     dem.living_with_partner_or_spouse,
+                     dem.living_with_housemates,
+                     dem.age_children_living,
+                     dem.age_children_living.1,
+                     dem.living_with_other_members_of_my_family,
+                     dem.members_living_partner_spouse,
+                     dem.prefer_not_to_say))
+
+```
+
+#Renaming columns.
+
+```{r Renaming columns}
+
+# Baseline data
+baseline_dummy_data <- baseline_dummy_data %>%
+  rename(Age = dem2.how_old_are_you,
+         Gender = dem2.which_gender_do_you_identify_with,
+         Cats = dem2.cats,
+         Dogs = dem2.dogs,
+         Fish = dem2.fish,
+         Birds = dem2.bird,
+         Reptiles = dem2.reptile,
+         Small_rodents = dem2.small_rodent,
+         Other_pet = dem2.other_please_specify_species,
+         Pet_description = dem2.other_please_specify_species_text.txt,
+         No_of_rooms = dem2.count_bathrooms_bedrooms_hallways,
+         Education = employ.what_is_your_highest_level_of_education,
+         Exercise_baseline = selfcar.exercised,
+         Daily_structure_baseline = selfcar.maintained_your_normal_daily_structure
+         )
+
+# 3 months data
+threemonths_dummy_data <- threemonths_dummy_data %>%
+  rename(Login.ID = externalDataReference,
+         Exercise_3months = selfcare.exercised,
+         Daily_structure_3months = selfcare.maintained_your_normal_daily_structure
+         )
+
+# 6 months data
+sixmonths_dummy_data <- sixmonths_dummy_data %>%
+  rename(Login.ID = externalDataReference,
+         Exercise_6months = selfcare.exercised,
+         Daily_structure_6months = selfcare.maintained_your_normal_daily_structure
+         )
+
+# 12 months data
+twelvemonths_dummy_data <- twelvemonths_dummy_data %>%
+  rename(Login.ID = externalDataReference,
+         Exercise_12months = selfcare.exercised,
+         Daily_structure_12months = selfcare.maintained_your_normal_daily_structure
+         )
+
+# Pet foster data
+petfoster_dummy_data <- petfoster_dummy_data %>%
+  rename(Login.ID = externalDataReference)
+
+```
+
+#"Pet_description" part 1: Change data types and change to lowercase.
+
+```{r Data types / lowercase}
+
+# Change "Pet description" column from factor to character
+baseline_dummy_data$Pet_description <- as.character(baseline_dummy_data$Pet_description)
+
+# Changing all answers to lowercase
+baseline_dummy_data$Pet_description <- tolower(baseline_dummy_data$Pet_description)
+
+# Changing all pet categories to numeric (factors are tricky, so we convert to character first)
+# To character
+baseline_dummy_data[, c('Cats',
+                        'Dogs',
+                        'Fish',
+                        'Birds',
+                        'Reptiles',
+                        'Small_rodents')] <-
+  sapply(baseline_dummy_data[, c('Cats',
+                        'Dogs',
+                        'Fish',
+                        'Birds',
+                        'Reptiles',
+                        'Small_rodents')], as.character)
+# To numeric
+baseline_dummy_data[, c('Cats',
+                        'Dogs',
+                        'Fish',
+                        'Birds',
+                        'Reptiles',
+                        'Small_rodents')] <-
+  sapply(baseline_dummy_data[, c('Cats',
+                        'Dogs',
+                        'Fish',
+                        'Birds',
+                        'Reptiles',
+                        'Small_rodents')], as.numeric)
+
+```
+
+#"Pet_description" part 2: Remove invalid answers
+
+```{r Remove invalid answers}
+
+# Define list of words/phrases that, if present in an answer, makes this answer "invalid" (i.e. removes this answer from further categorisation).
+naughty_list <- c("dog died", "lost", "about", "stolen", "visit", "not mine", "occa", "ordinary", "fox", "look", "not pet", "griev", "mum", "hear", "recent", ";", "norm", "fost", "small", "stray", "usually", "treat", "mous")
+
+# Create tibble excluding words/phrases from naughty_list
+without_naughty_list <- baseline_dummy_data %>%
+  select(c(Login.ID, Pet_description)) %>%
+  filter(!grepl(paste(naughty_list, collapse="|"), Pet_description))
+
+```
+
+#"Pet_description" part 3: Tokenize data
+
+```{r Tokenize data}
+
+# Tokenizing the text: separate a line in its individual words
+comments <- without_naughty_list %>%
+    unnest_tokens(desc_token, Pet_description)
+
+```
+
+#"Pet_description" part 4: Filtering out "stop words"
+
+#Filtering out "stop words". In general, these are words that are common but uninformative.
+#In this case, the stop words are "giant" and "pigmy"; including these words would make it harder to find -and properly categorise the relevant pet descriptions (e.g., someone has misspelled "pidgeons" as "pigeons, which could later mislabel this animal as "pig".
+
+```{r Filtering out "stop words}
+
+# Here a common lexicon is used an and "giant" and "pigmy" added
+stopwords <- get_stopwords() %>%
+    add_row(word="giant", lexicon="personal") %>%
+    add_row(word="pigmy", lexicon="personal") %>%
+    rename(desc_token = word)
+
+# Then these stop words are filtered out
+comments <- comments %>%
+    anti_join(stopwords)
+
+```
+
+#"Pet_description" part 5: "Stem" or "lemonize" words
+
+#Third, we can "stem" or "lemmatize" words. That is, reduce all forms of the same word to only one of them
+#(ex: is, are, be, being -> be; cat, cats -> cat).
+#This reduces variation and makes cleaning a lot easier.
+
+```{r Stem or lemonize words}
+
+# Stem/lemonize words
+comments <- comments %>%
+    mutate(stem = wordStem(desc_token))
+
+```
+
+#"Pet_description" part 6: Finding and correcting words that belong to already existing category
+
+#Some participants have specified a pet in "Pet.Description" that actually belongs in the already established categories. E.g., a #participant may have written "parrot" in the "Pet.Description" category, but not answered in the already established "bird" #category.
+#This step is about making sure answers given in the "Pet.Description" is properly placed in the relevant pet category, if this #isn't already the case.
+
+
+
+#"Pet_description" part 6.A: Small rodents
+
+# No relevant replies in dataset, therefore these are discarded (OBS: One answer included "mouse" but was invalid and therefore added to naughty_list)
+
+
+
+#"Pet_description" part 6.B: Birds
+
+```{r Birds}
+
+# Building a list with "birds"
+birds <- c("pige", "bird", "parrot", "cock") 
+
+# Where words are used / new column
+comments_bird <- comments %>%
+    mutate(bird_in_comments = ifelse(stem %in% birds, 1, 0))
+
+# Summarising data
+comments_bird <- comments_bird  %>%
+    group_by(Login.ID) %>%
+    summarise(talk_about_birds = sum(bird_in_comments)) %>%
+    mutate(talk_about_birds = ifelse(talk_about_birds >= 1, 1, 0))
+
+# Merging the two data sets together and adjusting the original variable
+baseline_dummy_data <- left_join(baseline_dummy_data, comments_bird) %>%
+    mutate(Birds = case_when(
+                (Birds == 0 | is.na(Birds)) & talk_about_birds == 1 ~ talk_about_birds,
+                TRUE ~ Birds),
+                talk_about_birds = NULL
+                )
+
+# Removing words from list so they don't interfere with later categorizations
+comments <- comments %>%
+  filter(!grepl(paste(birds, collapse="|"), stem))
+
+```
+
+#"Pet_description" part 6.C: Reptiles
+
+```{r Reptiles}
+
+# Building a list with "reptiles"
+reptiles <- c("snak", "tort", "turt", "dragon") 
+
+# Where words are used / new column
+comments_reptiles <- comments %>%
+    mutate(reptiles_in_comments = ifelse(stem %in% reptiles, 1, 0))
+
+# Summarising data
+comments_reptiles <- comments_reptiles  %>%
+    group_by(Login.ID) %>%
+    summarise(talk_about_reptiles = sum(reptiles_in_comments)) %>%
+    mutate(talk_about_reptiles = ifelse(talk_about_reptiles >= 1, 1, 0))
+
+# Merging/adjusting
+baseline_dummy_data <- left_join(baseline_dummy_data, comments_reptiles) %>%
+    mutate(Reptiles = case_when(
+                (Reptiles == 0 | is.na(Reptiles)) & talk_about_reptiles == 1 ~ talk_about_reptiles,
+                TRUE ~ Reptiles),
+                talk_about_reptiles = NULL
+                )
+
+# Removing words from list so they don't interfere with later categorizations
+comments <- comments %>%
+  filter(!grepl(paste(reptiles, collapse="|"), stem))
+
+```
+
+#"Pet_description" part 6.D: Fish
+
+```{r Fish}
+
+# Building a list with "fish"
+fish <- c("pond", "fish")
+
+# Where words are used / new column
+comments_fish <- comments %>%
+    mutate(fish_in_comments = ifelse(stem %in% fish, 1, 0))
+
+# Summarising data
+comments_fish <- comments_fish  %>%
+    group_by(Login.ID) %>%
+    summarise(talk_about_fish = sum(fish_in_comments)) %>%
+    mutate(talk_about_fish = ifelse(talk_about_fish >= 1, 1, 0))
+
+# Merging/adjusting
+baseline_dummy_data <- left_join(baseline_dummy_data, comments_fish) %>%
+    mutate(Fish = case_when(
+                (Fish == 0 | is.na(Fish)) & talk_about_fish == 1 ~ talk_about_fish,
+                TRUE ~ Fish),
+                talk_about_fish = NULL
+                )
+
+# Removing words from list so they don't interfere with later categorizations
+comments <- comments %>%
+  filter(!grepl(paste(fish, collapse="|"), stem))
+
+```
+
+#"Pet_description" part 6.E: Dogs
+
+#No relevant replies in dataset, therefore these are discarded (OBS: Some answers included "dog" or "puppy" but was invalid and #therefore added to "naughty_list")
+
+
+
+#"Pet_description" part 6.F: Cats
+
+#No relevant replies in dataset, therefore these are discarded (OBS: Some answers included "cat" but was invalid and therefore #added to naughty_list or word wasn't categorized)
+
+
+
+#"Pet_description" part 7: Adding relevant answers to new categories
+
+# Next, valid comments that are not already covered in existing categories need to be added to new categories.
+
+
+
+#"Pet_description" part 7.A: Small other mammals
+
+```{r Small other mammals}
+
+# Building a list with "small other mammals"
+smallothermammals <- c("hedgehog", "ferret")
+
+# Where words are used / new column
+comments_smallothermammals <- comments %>%
+    mutate(smallothermammals_in_comments = ifelse(stem %in% smallothermammals, 1, 0))
+
+# Summarising data
+comments_smallothermammals <- comments_smallothermammals  %>%
+    group_by(Login.ID) %>%
+    summarise(talk_about_smallothermammals = sum(smallothermammals_in_comments)) %>%
+    mutate(talk_about_smallothermammals = ifelse(talk_about_smallothermammals >= 1, 1, 0))
+
+# Merging data
+baseline_dummy_data <- left_join(baseline_dummy_data, comments_smallothermammals) %>%
+    mutate(Small_other_mammals = talk_about_smallothermammals,
+          talk_about_smallothermammals = NULL
+          )
+
+# Removing words from list so they don't interfere with later categorizations
+comments <- comments %>%
+  filter(!grepl(paste(smallothermammals, collapse="|"), stem))
+
+```
+
+#"Pet_description" part 7.B: Farm animals
+
+```{r Farm animals}
+
+# Building a list with "farm animals"
+farmanimals <- c("chick", "hen", "sheep", "alpa", "donke", "cattl", "pig", "goat", "cow", "gees", "poultr", "fowl", "bantam", "duck")
+
+# Where words are used / new column
+comments_farmanimals <- comments %>%
+    mutate(farmanimals_in_comments = ifelse(stem %in% farmanimals, 1, 0))
+
+# Summarising data
+comments_farmanimals <- comments_farmanimals  %>%
+    group_by(Login.ID) %>%
+    summarise(talk_about_farmanimals = sum(farmanimals_in_comments)) %>%
+    mutate(talk_about_farmanimals = ifelse(talk_about_farmanimals >= 1, 1, 0))
+
+# Merging data
+baseline_dummy_data <- left_join(baseline_dummy_data, comments_farmanimals) %>%
+    mutate(Farm_animals = talk_about_farmanimals,
+          talk_about_farmanimals = NULL
+          )
+
+# Removing words from list so they don't interfere with later categorizations
+comments <- comments %>%
+  filter(!grepl(paste(farmanimals, collapse="|"), stem))
+
+```
+
+#"Pet_description" part 7.C: Horses
+
+```{r Horses}
+
+# Building a list with "horses"
+horses <- c("hors", "equi", "pon")
+
+# Where words are used / new column
+comments_horses <- comments %>%
+    mutate(horses_in_comments = ifelse(stem %in% horses, 1, 0))
+
+# Summarising data
+comments_horses <- comments_horses  %>%
+    group_by(Login.ID) %>%
+    summarise(talk_about_horses = sum(horses_in_comments)) %>%
+    mutate(talk_about_horses = ifelse(talk_about_horses >= 1, 1, 0))
+
+# Merging data
+baseline_dummy_data <- left_join(baseline_dummy_data, comments_horses) %>%
+    mutate(Horses = talk_about_horses,
+          talk_about_horses = NULL
+          )
+
+# Removing words from list so they don't interfere with later categorizations
+comments <- comments %>%
+  filter(!grepl(paste(horses, collapse="|"), stem))
+
+```
+
+#"Pet_description" part 7.D: Amphibian
+
+```{r Amphibian}
+
+# Building a list with "amphibian"
+amphibian <- c("frog", "tadpol", "amph", "axolotyl")
+
+# Where words are used / new column
+comments_amphibian <- comments %>%
+    mutate(amphibian_in_comments = ifelse(stem %in% amphibian, 1, 0))
+
+# Summarising data
+comments_amphibian <- comments_amphibian  %>%
+    group_by(Login.ID) %>%
+    summarise(talk_about_amphibian = sum(amphibian_in_comments)) %>%
+    mutate(talk_about_amphibian = ifelse(talk_about_amphibian >= 1, 1, 0))
+
+# Merging data
+baseline_dummy_data <- left_join(baseline_dummy_data, comments_amphibian) %>%
+    mutate(Amphibian = talk_about_amphibian,
+          talk_about_amphibian = NULL
+          )
+
+# Removing words from list so they don't interfere with later categorizations
+comments <- comments %>%
+  filter(!grepl(paste(amphibian, collapse="|"), stem))
+
+```
+
+#"Pet_description" part 7.E: Arachnids
+
+```{r Arachnids}
+
+# Building a list with "arachnid"
+arachnid <- c("scorp", "arach", "spider", "taran")
+
+# Where words are used / new column
+comments_arachnid <- comments %>%
+    mutate(arachnid_in_comments = ifelse(stem %in% arachnid, 1, 0))
+
+# Summarising data
+comments_arachnid <- comments_arachnid  %>%
+    group_by(Login.ID) %>%
+    summarise(talk_about_arachnid = sum(arachnid_in_comments)) %>%
+    mutate(talk_about_arachnid = ifelse(talk_about_arachnid >= 1, 1, 0))
+
+# Merging data
+baseline_dummy_data <- left_join(baseline_dummy_data, comments_arachnid) %>%
+    mutate(Arachnid = talk_about_arachnid,
+          talk_about_arachnid = NULL
+          )
+
+# Removing words from list so they don't interfere with later categorizations
+comments <- comments %>%
+  filter(!grepl(paste(arachnid, collapse="|"), stem))
+
+```
+
+#"Pet_description" part 7.F: Insects
+
+```{r Insects}
+
+# Building a list with "insects"
+insects <- c("bee", "insect", "mantid", "ant", "caterp", "bug")
+
+# Where words are used / new column
+comments_insects <- comments %>%
+    mutate(insects_in_comments = ifelse(stem %in% insects, 1, 0))
+
+# Summarising data
+comments_insects <- comments_insects  %>%
+    group_by(Login.ID) %>%
+    summarise(talk_about_insects = sum(insects_in_comments)) %>%
+    mutate(talk_about_insects = ifelse(talk_about_insects >= 1, 1, 0))
+
+# Merging data
+baseline_dummy_data <- left_join(baseline_dummy_data, comments_insects) %>%
+    mutate(Insects = talk_about_insects,
+          talk_about_insects = NULL
+          )
+
+# Removing words from list so they don't interfere with later categorizations
+comments <- comments %>%
+  filter(!grepl(paste(insects, collapse="|"), stem))
+
+```
+
+#"Pet_description" part 7.G: Snails
+
+```{r Snails}
+
+# Building a list with "snails"
+snails <- c("snail")
+
+# Where words are used / new column
+comments_snails <- comments %>%
+    mutate(snails_in_comments = ifelse(stem %in% snails, 1, 0))
+
+# Summarising data
+comments_snails <- comments_snails  %>%
+    group_by(Login.ID) %>%
+    summarise(talk_about_snails = sum(snails_in_comments)) %>%
+    mutate(talk_about_snails = ifelse(talk_about_snails >= 1, 1, 0))
+
+# Merging data
+baseline_dummy_data <- left_join(baseline_dummy_data, comments_snails) %>%
+    mutate(Snails = talk_about_snails,
+          talk_about_snails = NULL
+          )
+
+# Removing words from list so they don't interfere with later categorizations
+comments <- comments %>%
+  filter(!grepl(paste(snails, collapse="|"), stem))
+
+```
+
+#Prepare prefoster time points / create data sets.
+
+```{r Prepare prefoster time points/data / create data sets}
+
+# Arrange petfoster data by dates
+petfoster_dummy_data <- petfoster_dummy_data %>%
+  arrange(DateStarted_DMY)
+
+# Prepare dates for petfoster - 3 months
+start_time <- as.Date("2020-04-21")
+end_3mo <- as.Date("2020-08-14")
+# Prepare dates for petfoster - 6 months
+end_6mo <- as.Date("2020-11-20")
+# Prepare dates for petfoster - 12 months
+end_12mo <- as.Date("2021-05-06")
+
+# Pet fostering 3 months data
+foster_threemonths <- petfoster_dummy_data %>%
+  filter(DateStarted_DMY > start_time) %>%
+  filter(DateStarted_DMY < end_3mo)
+
+# Pet fostering 6 months data
+foster_sixmonths <- petfoster_dummy_data %>%
+  filter(DateStarted_DMY > start_time) %>%
+  filter(DateStarted_DMY < end_6mo)
+
+# Pet fostering 12 months data
+foster_twelvemonths <- petfoster_dummy_data %>%
+  filter(DateStarted_DMY > start_time) %>%
+  filter(DateStarted_DMY < end_12mo)
+
+# Pet fostering for 3-6 months period data
+foster_3to6months <- petfoster_dummy_data %>%
+  filter(DateStarted_DMY > end_3mo) %>%
+  filter(DateStarted_DMY < end_6mo)
+
+# Pet fostering for 6-12 months period data
+foster_6to12months <- petfoster_dummy_data %>%
+  filter(DateStarted_DMY > end_6mo) %>%
+  filter(DateStarted_DMY < end_12mo)
+
+```
+
+#Create new data columns for prefoster data sets.
+
+```{r Create new data columns for prefoster data sets}
+
+# Column if participant adopted pet after 3 months
+foster_threemonths <- foster_threemonths %>%
+  mutate(pet_3months =
+  ifelse(beh.fostered_an_animal_in_need | beh.taken_on_ownership_a_pet == 1, 1, 0))
+
+# Making it so that 1 participant = 1 column - for 3 months data
+foster_threemonths <- foster_threemonths %>%
+  group_by(Login.ID) %>%
+  summarise(pet_3months = max(pet_3months))
+
+# Column if participant adopted pet after 6 months
+foster_sixmonths <- foster_sixmonths %>%
+  mutate(pet_6months =
+  ifelse(beh.fostered_an_animal_in_need | beh.taken_on_ownership_a_pet == 1, 1, 0))
+
+# Making it so that 1 participant = 1 column - for 6 months data
+foster_sixmonths <- foster_sixmonths %>%
+  group_by(Login.ID) %>%
+  summarise(pet_6months = max(pet_6months))
+
+# Column if participant adopted pet after 12 months
+foster_twelvemonths <- foster_twelvemonths %>%
+  mutate(pet_12months =
+  ifelse(beh.fostered_an_animal_in_need | beh.taken_on_ownership_a_pet == 1, 1, 0))
+
+# Making it so that 1 participant = 1 column - for 12 months data
+foster_twelvemonths <- foster_twelvemonths %>%
+  group_by(Login.ID) %>%
+  summarise(pet_12months = max(pet_12months))
+
+```
+
+#Create new pet categories for baseline.
+
+```{r Create new pet categories for baseline}
+
+# Pet/no pet
+baseline_dummy_data <- baseline_dummy_data %>%
+  mutate(Pets.base =
+           ifelse(Cats == 1 |
+                    Dogs == 1 |
+                    Fish == 1 |
+                    Birds == 1 |
+                    Reptiles == 1 |
+                    Small_rodents == 1 |
+                    Small_other_mammals == 1 |
+                    Farm_animals == 1 |
+                    Horses == 1 |
+                    Amphibian == 1 |
+                    Arachnid == 1 |
+                    Insects == 1 |
+                    Snails == 1,
+                  1, 0))
+
+# Cat and dog
+baseline_dummy_data <- baseline_dummy_data %>%
+  mutate(Cats_and_dogs.base =
+           ifelse(Cats == 1 &
+                    Dogs == 1,
+                  1, 0))
+
+# Create cat or dog column, change to factor, and relocate
+baseline_dummy_data <- baseline_dummy_data %>%
+  mutate(Cats_or_dogs.base =
+           ifelse(Cats == 1 |
+                    Dogs == 1,
+                  1, 0))
+
+# Other pet
+baseline_dummy_data <- baseline_dummy_data %>%
+  mutate(Other.base =
+           ifelse(Fish == 1 |
+                    Birds == 1 |
+                    Reptiles == 1 |
+                    Small_rodents == 1 |
+                    Small_other_mammals == 1 |
+                    Farm_animals == 1 |
+                    Horses == 1 |
+                    Amphibian == 1 |
+                    Arachnid == 1 |
+                    Insects == 1 |
+                    Snails == 1,
+                  1, 0))
+
+```
+
+#Change relevant baseline variables to/back to factors and rearrange levels.
+
+```{r Factor variables and rearrange levels}
+
+# Change relevant variables to / back to factors
+baseline_dummy_data[, c('Dogs',
+              'Cats',
+              'Fish',
+              'Birds',
+              'Reptiles',
+              'Small_rodents',
+              'Small_other_mammals',
+              'Farm_animals',
+              'Horses',
+              'Amphibian',
+              'Arachnid',
+              'Insects',
+              'Snails',
+              'Live_with_someone.baseline',
+              'Pets.base',
+              'Cats_and_dogs.base',
+              'Cats_or_dogs.base',
+              'Other.base')] <-
+  lapply(baseline_dummy_data[, c('Dogs',
+              'Cats',
+              'Fish',
+              'Birds',
+              'Reptiles',
+              'Small_rodents',
+              'Small_other_mammals',
+              'Farm_animals',
+              'Horses',
+              'Amphibian',
+              'Arachnid',
+              'Insects',
+              'Snails',
+              'Live_with_someone.baseline',
+              'Pets.base',
+              'Cats_and_dogs.base',
+              'Cats_or_dogs.base',
+              'Other.base')], factor)
+
+# Rearrange levels 
+baseline_dummy_data$Age <- factor(baseline_dummy_data$Age,
+                                  levels = c("16 to 18",
+                                             "19 to 25",
+                                             "26 to 35",
+                                             "36 to 45",
+                                             "46 to 55",
+                                             "56 to 65",
+                                             "66 to 70",
+                                             "71 to 75",
+                                             "76 to 80",
+                                             "81 to 85",
+                                             "86 to 90",
+                                             "91 to 100",
+                                             "100+"))
+baseline_dummy_data$Gender <- factor(baseline_dummy_data$Gender,
+                                     levels = c("Male",
+                                                "Female",
+                                                "Non binary",
+                                                "Prefer to self define"))
+baseline_dummy_data$Education <- factor(baseline_dummy_data$Education,
+                                        levels = c("None of these",
+                                                   "GCSE or equivalent",
+                                                   "A-level or equivalent",
+                                                   "Bachelors or equivalent",
+                                                   "Master's or equivalent",
+                                                   "Postgraduate degree or equivalent",
+                                                   "PhD"))
+
+# Convert to numeric first, then define levels
+baseline_dummy_data$No_of_rooms <- as.numeric(as.character(baseline_dummy_data$No_of_rooms))
+baseline_dummy_data$No_of_rooms <- factor(baseline_dummy_data$No_of_rooms,
+                                          levels = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
+
+```
+
+#Select data from each data set.
+
+```{r Select data from each data set}
+
+# Baseline
+data_base <- baseline_dummy_data %>%
+  select(
+    c(
+      Login.ID, Age, Gender, Education,
+      No_of_rooms, Live_with_someone.baseline, Exercise_baseline, Daily_structure_baseline,
+      Dogs, Cats, Fish, Birds, Reptiles, Small_rodents,
+      Small_other_mammals, Farm_animals, Horses, Amphibian,
+      Arachnid, Insects, Snails,
+      starts_with("Score"),
+      Pets.base, Cats_and_dogs.base, Cats_or_dogs.base, Other.base,
+      )
+    )
+
+# Three months
+data_three <- threemonths_dummy_data %>%
+  select(
+    c(Login.ID,
+      Live_with_someone.3months,
+      Exercise_3months,
+      Daily_structure_3months,
+      starts_with("Score")
+      )
+    )
+
+# Six months
+data_six <- sixmonths_dummy_data %>%
+  select(
+    c(Login.ID,
+      Live_with_someone.6months,
+      Exercise_6months,
+      Daily_structure_6months,
+      starts_with("Score"),
+      )
+    )
+
+# Twelve months
+data_twelve <- twelvemonths_dummy_data %>%
+  select(
+    c(Login.ID,
+      Live_with_someone.12months,
+      Exercise_12months,
+      Daily_structure_12months,
+      starts_with("Score")
+      )
+    )
+
+# Petfoster - three months
+data_foster_three <- foster_threemonths %>%
+  select(
+    c(Login.ID,
+      pet_3months
+      )
+    )
+
+# Petfoster - six months
+data_foster_six <- foster_sixmonths %>%
+  select(
+    c(Login.ID,
+      pet_6months
+      )
+    )
+
+# Petfoster - twelve months
+data_foster_twelve <- foster_twelvemonths %>%
+  select(
+    c(Login.ID,
+      pet_12months
+      )
+    )
+
+```
+
+#Merge existing data sets & prepare for plotting/modelling.
+
+```{r Merge existing data sets & prepare for plotting/modelling.}
+
+# Merge baseline and 3 months data
+data_merge1 <- merge(data_base, data_three, by = c("Login.ID"), all = TRUE)
+# Merge this with 6 months data
+data_merge2 <- merge(data_merge1, data_six, by = c("Login.ID"), all = TRUE)
+# Merge this with 12 months data
+data_merge3 <- merge(data_merge2, data_twelve, by = c("Login.ID"), all = TRUE)
+# Merge this with petfoster 3 months data
+data_merge4 <- merge(data_merge3, data_foster_three, by = c("Login.ID"), all = TRUE)
+# Merge this with petfoster 6 months data
+data_merge5 <- merge(data_merge4, data_foster_six, by = c("Login.ID"), all = TRUE)
+# Merge this with petfoster 12 months data
+data_merge6 <- merge(data_merge5, data_foster_twelve, by = c("Login.ID"), all = TRUE)
+
+# Reorder columns (to make it easier to navigate) and create final data set
+finaldata <- data_merge6[, c('Login.ID',
+                             'Age',
+                             'Gender',
+                             'Education',
+                             'No_of_rooms',
+                             'Dogs',
+                             'Cats',
+                             'Fish',
+                             'Birds',
+                             'Reptiles',
+                             'Small_rodents',
+                             'Small_other_mammals',
+                             'Farm_animals', 'Horses',
+                             'Amphibian',
+                             'Arachnid',
+                             'Insects',
+                             'Snails',
+                             'Live_with_someone.baseline',
+                             'Live_with_someone.3months',
+                             'Live_with_someone.6months',
+                             'Live_with_someone.12months',
+                             'Exercise_baseline',
+                             'Exercise_3months',
+                             'Exercise_6months',
+                             'Exercise_12months',
+                             'Daily_structure_baseline',
+                             'Daily_structure_3months',
+                             'Daily_structure_6months',
+                             'Daily_structure_12months',
+                             'Pets.base',
+                             'Cats_and_dogs.base',
+                             'Cats_or_dogs.base',
+                             'Other.base',
+                             'pet_3months',
+                             'pet_6months',
+                             'pet_12months',
+                             'Score_phq_baseline',
+                             'Score_phq_threemonths',
+                             'Score_phq_sixmonths',
+                             'Score_phq_twelvemonths',
+                             'Score_gad_baseline',
+                             'Score_gad_threemonths',
+                             'Score_gad_sixmonths',
+                             'Score_gad_twelvemonths',
+                             'Score_lone_baseline',
+                             'Score_lone_threemonths',
+                             'Score_lone_sixmonths',
+                             'Score_lone_twelvemonths',
+                             'Score_masq_baseline',
+                             'Score_masq_threemonths',
+                             'Score_masq_sixmonths',
+                             'Score_masq_twelvemonths')]
+
+# Change relevant variables to / back to factors
+finaldata[, c('Live_with_someone.3months',
+              'Live_with_someone.6months',
+              'Live_with_someone.12months',
+              'pet_3months',
+              'pet_6months',
+              'pet_12months')] <-
+  lapply(finaldata[, c('Live_with_someone.3months',
+              'Live_with_someone.6months',
+              'Live_with_someone.12months',
+              'pet_3months',
+              'pet_6months',
+              'pet_12months')], factor)
+
+# Create ID column
+finaldata <- tibble::rowid_to_column(finaldata, "ID")
+
+```
+
+#Create new columns for data analysis.
+
+```{r Create new columns for data analysis}
+
+# People who report having pets 3 months post baseline
+finaldata <- finaldata %>%
+  mutate(have_pet.3months =
+           ifelse(
+             Pets.base == 1 | pet_3months == 1, 1, 0))
+finaldata$have_pet.3months <- as.factor(finaldata$have_pet.3months) # To Factor
+
+# People who report having pets 6 months post baseline
+finaldata <- finaldata %>%
+  mutate(have_pet.6months =
+           ifelse(
+             Pets.base == 1 | pet_3months == 1 | pet_6months == 1, 1, 0))
+finaldata$have_pet.6months <- as.factor(finaldata$have_pet.6months) # To Factor
+
+# People who report having pets 12 months post baseline
+finaldata <- finaldata %>%
+  mutate(have_pet.12months =
+           ifelse(
+             Pets.base == 1 | pet_3months == 1 | pet_6months == 1 | pet_12months == 1, 1, 0))
+finaldata$have_pet.12months <- as.factor(finaldata$have_pet.12months) # To Factor
+
+# People who report adopting pets 3 months post baseline exluding previous (baseline) owners or non owners
+finaldata <- finaldata %>%
+  mutate(New.adopt.3months =
+           case_when(
+             .$pet_3months == 1 & .$Pets.base == 0 ~ 1, 
+             .$pet_3months == 0 & .$Pets.base == 1 ~ 0,
+             .$pet_3months == 0 & .$Pets.base == 0 ~ 0,
+             .$pet_3months == 1 & .$Pets.base == 1 ~ 0
+             )
+         )
+finaldata$New.adopt.3months <- as.factor(finaldata$New.adopt.3months) # To Factor
+
+# People who report adopting pets 6 months post baseline exluding previous (baseline) owners or non owners
+finaldata <- finaldata %>%
+  mutate(New.adopt.6months =
+           case_when(
+             .$pet_6months == 1 & .$Pets.base == 0 ~ 1, 
+             .$pet_6months == 0 & .$Pets.base == 1 ~ 0,
+             .$pet_6months == 0 & .$Pets.base == 0 ~ 0,
+             .$pet_6months == 1 & .$Pets.base == 1 ~ 0
+             )
+         )
+finaldata$New.adopt.6months <- as.factor(finaldata$New.adopt.6months) # To Factor
+
+# People who report adopting pets 12 months post baseline exluding previous (baseline) owners or non owners
+finaldata <- finaldata %>%
+  mutate(New.adopt.12months =
+           case_when(
+             .$pet_12months == 1 & .$Pets.base == 0 ~ 1, 
+             .$pet_12months == 0 & .$Pets.base == 1 ~ 0,
+             .$pet_12months == 0 & .$Pets.base == 0 ~ 0,
+             .$pet_12months == 1 & .$Pets.base == 1 ~ 0
+             )
+         )
+finaldata$New.adopt.12months <- as.factor(finaldata$New.adopt.12months) # To Factor
+
+# People who report adopting pets 3 months post baseline versus existing owners (baseline)
+finaldata <- finaldata %>%
+  mutate(New_vs_existing.3months =
+           case_when(
+             .$pet_3months == 1 & .$Pets.base == 0 ~ 1, 
+             .$pet_3months == 0 & .$Pets.base == 1 ~ 0,
+             .$pet_3months == 1 & .$Pets.base == 1 ~ NA_real_,
+             .$pet_3months == 0 & .$Pets.base == 0 ~ NA_real_
+             )
+         )
+finaldata$New_vs_existing.3months <- as.factor(finaldata$New_vs_existing.3months) # To Factor
+
+# People who report adopting pets 6 months post baseline versus existing owners (baseline)
+finaldata <- finaldata %>%
+  mutate(New_vs_existing.6months =
+           case_when(
+             .$pet_6months == 1 & .$Pets.base == 0 ~ 1, 
+             .$pet_6months == 0 & .$Pets.base == 1 ~ 0,
+             .$pet_6months == 1 & .$Pets.base == 1 ~ NA_real_,
+             .$pet_6months == 0 & .$Pets.base == 0 ~ NA_real_
+             )
+         )
+finaldata$New_vs_existing.6months <- as.factor(finaldata$New_vs_existing.3months) # To Factor
+
+# People who report adopting pets 12 months post baseline versus existing owners
+finaldata <- finaldata %>%
+  mutate(New_vs_existing.12months =
+           case_when(
+             .$pet_12months == 1 & .$Pets.base == 0 ~ 1, 
+             .$pet_12months == 0 & .$Pets.base == 1 ~ 0,
+             .$pet_12months == 1 & .$Pets.base == 1 ~ NA_real_,
+             .$pet_12months == 0 & .$Pets.base == 0 ~ NA_real_
+             )
+         )
+finaldata$New_vs_existing.12months <- as.factor(finaldata$New_vs_existing.12months) # To Factor
+
+# Baseline - non owners
+baseline_dummy_data <- baseline_dummy_data %>%
+  mutate(Non_owners.base =
+  ifelse(Pets.base == 0, 1, 0))
+baseline_dummy_data$Non_owners.base <- as.factor(baseline_dummy_data$Non_owners.base) # To Factor
+
+```
+
+#Recode exercise and daily structure columns.
+
+```{r Recode exercise and daily structure columns}
+
+# Recode "Exercise_baseline"
+finaldata$Exercise_baseline <- as.numeric(as.character(finaldata$Exercise_baseline)) # Change to numeric
+finaldata <- finaldata %>%
+  mutate(Exercise_baseline =
+           recode_factor(
+             Exercise_baseline,
+             `0` = "Not at all",
+             `1` = "One or two days",
+             `2` = "Several days",
+             `3` = "More than half the days",
+             `4` = "Nearly every or every day"
+           )
+         ) # Recode answers
+
+# Recode "Exercise_3months"
+finaldata$Exercise_3months <- as.numeric(as.character(finaldata$Exercise_3months)) # Change to numeric
+finaldata <- finaldata %>%
+  mutate(Exercise_3months =
+           recode_factor(
+             Exercise_3months,
+             `0` = "Not at all",
+             `1` = "One or two days",
+             `2` = "Several days",
+             `3` = "More than half the days",
+             `4` = "Nearly every or every day"
+           )
+         ) # Recode answers
+
+# Recode "Exercise_6months"
+finaldata$Exercise_6months <- as.numeric(as.character(finaldata$Exercise_6months)) # Change to numeric
+finaldata <- finaldata %>%
+  mutate(Exercise_6months =
+           recode_factor(
+             Exercise_6months,
+             `0` = "Not at all",
+             `1` = "One or two days",
+             `2` = "Several days",
+             `3` = "More than half the days",
+             `4` = "Nearly every or every day"
+           )
+         ) # Recode answers
+
+# Recode "Exercise_12months"
+finaldata$Exercise_12months <- as.numeric(as.character(finaldata$Exercise_12months)) # Change to numeric
+finaldata <- finaldata %>%
+  mutate(Exercise_12months =
+           recode_factor(
+             Exercise_12months,
+             `0` = "Not at all",
+             `1` = "One or two days",
+             `2` = "Several days",
+             `3` = "More than half the days",
+             `4` = "Nearly every or every day"
+           )
+         ) # Recode answers
+
+# Recode "Daily_strucutre_baseline"
+finaldata$Daily_structure_baseline <- as.numeric(as.character(finaldata$Daily_structure_baseline)) # Change to numeric
+finaldata <- finaldata %>%
+  mutate(Daily_structure_baseline =
+           recode_factor(
+             Daily_structure_baseline,
+             `0` = "Not at all",
+             `1` = "One or two days",
+             `2` = "Several days",
+             `3` = "More than half the days",
+             `4` = "Nearly every or every day"
+           )
+         ) # Recode answers
+
+# Recode "Daily_strucutre_3months"
+finaldata$Daily_structure_3months <- as.numeric(as.character(finaldata$Daily_structure_3months)) # Change to numeric
+finaldata <- finaldata %>%
+  mutate(Daily_structure_3months =
+           recode_factor(
+             Daily_structure_3months,
+             `0` = "Not at all",
+             `1` = "One or two days",
+             `2` = "Several days",
+             `3` = "More than half the days",
+             `4` = "Nearly every or every day"
+           )
+         ) # Recode answers
+
+# Recode "Daily_strucutre_6months"
+finaldata$Daily_structure_6months <- as.numeric(as.character(finaldata$Daily_structure_6months)) # Change to numeric
+finaldata <- finaldata %>%
+  mutate(Daily_structure_6months =
+           recode_factor(
+             Daily_structure_6months,
+             `0` = "Not at all",
+             `1` = "One or two days",
+             `2` = "Several days",
+             `3` = "More than half the days",
+             `4` = "Nearly every or every day"
+           )
+         ) # Recode answers
+
+# Recode "Daily_strucutre_12months"
+finaldata$Daily_structure_12months <- as.numeric(as.character(finaldata$Daily_structure_12months)) # Change to numeric
+finaldata <- finaldata %>%
+  mutate(Daily_structure_12months =
+           recode_factor(
+             Daily_structure_12months,
+             `0` = "Not at all",
+             `1` = "One or two days",
+             `2` = "Several days",
+             `3` = "More than half the days",
+             `4` = "Nearly every or every day"
+           )
+         ) # Recode answers
+
+```
+
+#save interim data files
+```{r save cleaned data}
+
+saveRDS(baseline_dummy_data,paste0(data_save_path,"/Pets_2021/baseline_data_cleaned.rds"))
+saveRDS(threemonths_dummy_data,paste0(data_save_path,"/Pets_2021/threemonths_dummy_data_cleaned.rds"))
+saveRDS(sixmonths_dummy_data,paste0(data_save_path,"/Pets_2021/sixmonths_dummy_data_cleaned.rds"))
+saveRDS(twelvemonths_dummy_data,paste0(data_save_path,"/Pets_2021/twelvemonths_dummy_data_cleaned.rds"))
+saveRDS(finaldata,paste0(data_save_path,"/Pets_2021/finaldata_cleaned.rds"))
+
+```

@@ -1,0 +1,3995 @@
+---
+title: "Pet ownership and mental health in the time of Covid-19 - stats"
+author: "Christoffer Landberger"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#-------- DATA ANALYSIS --------
+
+
+
+#Installing/loading relevant packages.
+
+```{r Installing/loading relevant packages}
+
+# Install packages if relevant
+
+if(!require(usethis)){
+    install.packages("usethis")
+    library(usethis)
+}
+
+#devtools::install('/Users/katherineyoung/Documents/r packages/parameters-main',dependencies=FALSE)
+#devtools::install('/Users/katherineyoung/Documents/r packages/performance-master',dependencies=FALSE)
+#devtools::install('/Users/katherineyoung/Documents/r packages/effectsize-main',dependencies=FALSE)
+#devtools::install('/Users/katherineyoung/Documents/r packages/report-master',dependencies=FALSE)
+
+library(report)
+
+if(!require(tinytex)){
+    install.packages("tinytex")
+    library(tinytex)
+}
+
+if(!require(tidyverse)){
+    install.packages("tidyverse")
+    library(tidyverse)
+}
+
+if(!require(tidytext)){
+    install.packages("tidytext")
+    library(tidytext)
+}
+
+if(!require(SnowballC)){
+    install.packages("SnowballC")
+    library(SnowballC)
+}
+
+if(!require(remotes)){
+    install.packages("remotes")
+    library(remotes)
+}
+
+if(!require(devtools)){
+    install.packages("devtools")
+    library(devtools)
+}
+
+if(!require(gtsummary)){
+    install.packages("gtsummary")
+    library(gtsummary)
+}
+
+if(!require(ggplot2)){
+    install.packages("ggplot2")
+    library(ggplot2)
+}
+
+if(!require(reshape2)){
+    install.packages("reshape2")
+    library(reshape2)
+}
+
+if(!require(yarrr)){
+    install.packages("yarrr")
+    library(yarrr)
+}
+
+if(!require(MuMIn)){
+    install.packages("MuMIn")
+    library(MuMIn)
+}
+
+if(!require(ordinal)){
+    install.packages("ordinal")
+    library(ordinal)
+}
+
+if(!require(tinytex)){
+    install.packages("tinytex")
+    library(tinytex)
+}
+
+if(!require(gt)){
+    install.packages("gt")
+    library(gt)
+}
+
+if(!require(lmerTest)){
+    install.packages("lmerTest")
+    library(lmerTest)
+}
+
+if(!require(Rcpp)){
+    install.packages("Rcpp")
+    library(Rcpp)
+}
+
+if(!require(sjPlot)){
+    install.packages("sjPlot")
+    library(sjPlot)
+}
+
+remove(list = ls())
+
+source("../file_paths.R")
+source("./libraries.R")
+
+```
+
+#Loading data sets.
+
+```{r Loading data sets}
+
+# Load data sets
+baseline_dummy_data <- readRDS(file = paste0(data_save_path,"/Pets_2021/baseline_data_cleaned.rds"))
+threemonths_dummy_data <- readRDS(file = paste0(data_save_path,"/Pets_2021/threemonths_dummy_data_cleaned.rds"))
+sixmonths_dummy_data <- readRDS(file = paste0(data_save_path,"/Pets_2021/sixmonths_dummy_data_cleaned.rds"))
+twelvemonths_dummy_data <- readRDS(file = paste0(data_save_path,"/Pets_2021/twelvemonths_dummy_data_cleaned.rds"))
+finaldata <- readRDS(file = paste0(data_save_path,"/Pets_2021/finaldata_cleaned.rds"))
+
+```
+
+#-------- DESCRIPTIVE STATISTICS / DATA ANALYSIS --------
+
+
+
+#Get summarys of baseline, 3 months, 6 months, 12 months, and all data.
+
+```{r Get summarys}
+
+# Baseline summary
+summary(baseline_dummy_data)
+# 3 months summary
+summary(threemonths_dummy_data)
+# 6 months summary
+summary(sixmonths_dummy_data)
+# 12 months summary
+summary(twelvemonths_dummy_data)
+# All data
+summary(finaldata)
+
+```
+
+#Count number/percentage of participants lost to each follow-up.
+
+```{r Lost to follow-ups}
+
+# 3 months follow-up
+length(setdiff(baseline_dummy_data$Login.ID, threemonths_dummy_data$Login.ID)) # number
+(length(setdiff(baseline_dummy_data$Login.ID, threemonths_dummy_data$Login.ID))) / nrow(baseline_dummy_data) * 100 # percentage
+
+# 6 months follow-up
+length(setdiff(baseline_dummy_data$Login.ID, sixmonths_dummy_data$Login.ID)) # number
+(length(setdiff(baseline_dummy_data$Login.ID, sixmonths_dummy_data$Login.ID))) / nrow(baseline_dummy_data) * 100 # percentage
+
+# 12 months follow-up
+length(setdiff(baseline_dummy_data$Login.ID, twelvemonths_dummy_data$Login.ID)) # number
+(length(setdiff(baseline_dummy_data$Login.ID, twelvemonths_dummy_data$Login.ID))) / nrow(baseline_dummy_data) * 100 # percentage
+
+```
+
+#Baseline demographics table - all predictors
+
+```{r Baseline demographics tables - all predictors}
+
+# Baseline demographics table - all participants
+plot.all <- baseline_dummy_data %>%
+  select(Age, Gender, Education, No_of_rooms, Live_with_someone.baseline, Pets.base, Dogs, Cats, Cats_and_dogs.base, Cats_or_dogs.base, Other.base, Fish, Birds, Reptiles, Small_rodents, Small_other_mammals, Farm_animals, Horses, Amphibian, Arachnid, Insects, Snails) %>%
+  tbl_summary(missing_text = "NA's") %>%
+  modify_spanning_header(starts_with("stat_") ~ "**All participants n (%)**") %>%
+  modify_header(label = "") %>%
+  bold_labels()
+plot.all # plot table
+
+```
+
+#Baseline demographics tables - main predictors
+
+```{r Baseline demographics tables - main predictors}
+
+# Baseline demographics table - pet owners
+plot.pets <- baseline_dummy_data %>%
+  subset(Pets.base == 1) %>%
+  select(Age, Gender, Education, No_of_rooms, Live_with_someone.baseline) %>%
+  tbl_summary(missing_text = "NA's") %>%
+  modify_spanning_header(starts_with("stat_") ~ "**Pet owners n (%)**") %>%
+  modify_header(label = "") %>%
+  bold_labels()
+
+plot.pets # plot table
+
+# Baseline demographics table - dog owners
+plot.dogs <- baseline_dummy_data %>%
+  subset(Dogs == 1) %>%
+  select(Age, Gender, Education, No_of_rooms, Live_with_someone.baseline) %>%
+  tbl_summary(missing_text = "NA's") %>%
+  modify_spanning_header(starts_with("stat_") ~ "**Dog owners n (%)**") %>%
+  modify_header(label = "") %>%
+  bold_labels()
+
+plot.dogs # plot table
+
+# Baseline demographics table - cat owners
+plot.cats <- baseline_dummy_data %>%
+  subset(Cats == 1) %>%
+  select(Age, Gender, Education, No_of_rooms, Live_with_someone.baseline) %>%
+  tbl_summary(missing_text = "NA's") %>%
+  modify_spanning_header(starts_with("stat_") ~ "**Cat owners n (%)**") %>%
+  modify_header(label = "") %>%
+  bold_labels()
+
+plot.cats # plot table
+
+# Baseline demographics table - cat & dog owners
+plot.cats_and_dogs <- baseline_dummy_data %>%
+  subset(Cats_and_dogs.base == 1) %>%
+  select(Age, Gender, Education, No_of_rooms, Live_with_someone.baseline) %>%
+  tbl_summary(missing_text = "NA's") %>%
+  modify_spanning_header(starts_with("stat_") ~ "**Cat & Dogs owners n (%)**") %>%
+  modify_header(label = "") %>%
+  bold_labels()
+
+plot.cats_and_dogs # plot table
+
+# Baseline demographics table - cat or dog owners
+plot.cats_or_dogs <- baseline_dummy_data %>%
+  subset(Cats_or_dogs.base == 1) %>%
+  select(Age, Gender, Education, No_of_rooms, Live_with_someone.baseline) %>%
+  tbl_summary(missing_text = "NA's") %>%
+  modify_spanning_header(starts_with("stat_") ~ "**Cat & Dogs owners n (%)**") %>%
+  modify_header(label = "") %>%
+  bold_labels()
+
+plot.cats_or_dogs # plot table
+
+# Baseline demographics table - other owners
+plot.other <- baseline_dummy_data %>%
+  subset(Other.base == 1) %>%
+  select(Age, Gender, Education, No_of_rooms, Live_with_someone.baseline) %>%
+  tbl_summary(missing_text = "NA's") %>%
+  modify_spanning_header(starts_with("stat_") ~ "**Other owners n (%)**") %>%
+  modify_header(label = "") %>%
+  bold_labels()
+
+plot.other # plot table
+
+```
+
+Baseline demographics tables - extra
+
+```{r Baseline demographics tables - extra}
+
+# Baseline demographics table - fish owners
+plot.fish <- baseline_dummy_data %>%
+  subset(Fish == 1) %>%
+  select(Age, Gender, Education, No_of_rooms, Live_with_someone.baseline) %>%
+  tbl_summary(missing_text = "NA's") %>%
+  modify_spanning_header(starts_with("stat_") ~ "**Fish owners n (%)**") %>%
+  modify_header(label = "") %>%
+  bold_labels()
+
+plot.fish # plot table
+
+# Baseline demographics table - bird owners
+plot.birds <- baseline_dummy_data %>%
+  subset(Birds == 1) %>%
+  select(Age, Gender, Education, No_of_rooms, Live_with_someone.baseline) %>%
+  tbl_summary(missing_text = "NA's") %>%
+  modify_spanning_header(starts_with("stat_") ~ "**Bird owners n (%)**") %>%
+  modify_header(label = "") %>%
+  bold_labels()
+
+plot.birds # plot table
+
+# Baseline demographics table - reptile owners
+plot.reptiles <- baseline_dummy_data %>%
+  subset(Reptiles == 1) %>%
+  select(Age, Gender, Education, No_of_rooms, Live_with_someone.baseline) %>%
+  tbl_summary(missing_text = "NA's") %>%
+  modify_spanning_header(starts_with("stat_") ~ "**Reptile owners n (%)**") %>%
+  modify_header(label = "") %>%
+  bold_labels()
+
+plot.reptiles # plot table
+
+# Baseline demographics table - small rodent owners
+plot.smallrodents <- baseline_dummy_data %>%
+  subset(Small_rodents == 1) %>%
+  select(Age, Gender, Education, No_of_rooms, Live_with_someone.baseline) %>%
+  tbl_summary(missing_text = "NA's") %>%
+  modify_spanning_header(starts_with("stat_") ~ "**Small rodent owners n (%)**") %>%
+  modify_header(label = "") %>%
+  bold_labels()
+
+plot.smallrodents # plot table
+
+# Baseline demographics table - small other mammal owners
+plot.smallothermammals <- baseline_dummy_data %>%
+  subset(Small_other_mammals == 1) %>%
+  select(Age, Gender, Education, No_of_rooms, Live_with_someone.baseline) %>%
+  tbl_summary(missing_text = "NA's") %>%
+  modify_spanning_header(starts_with("stat_") ~ "**Small other mammal owners n (%)**") %>%
+  modify_header(label = "") %>%
+  bold_labels()
+
+plot.smallothermammals # plot table
+
+# Baseline demographics table - farm animal owners
+plot.farmanimals <- baseline_dummy_data %>%
+  subset(Farm_animals == 1) %>%
+  select(Age, Gender, Education, No_of_rooms, Live_with_someone.baseline) %>%
+  tbl_summary(missing_text = "NA's") %>%
+  modify_spanning_header(starts_with("stat_") ~ "**Farm animal owners n (%)**") %>%
+  modify_header(label = "") %>%
+  bold_labels()
+
+plot.farmanimals # plot table
+
+# Baseline demographics table - horse owners
+plot.horses <- baseline_dummy_data %>%
+  subset(Horses == 1) %>%
+  select(Age, Gender, Education, No_of_rooms, Live_with_someone.baseline) %>%
+  tbl_summary(missing_text = "NA's") %>%
+  modify_spanning_header(starts_with("stat_") ~ "**Horse owners n (%)**") %>%
+  modify_header(label = "") %>%
+  bold_labels()
+
+plot.horses # plot table
+
+# Baseline demographics table - amphibian owners
+plot.amphibian <- baseline_dummy_data %>%
+  subset(Amphibian == 1) %>%
+  select(Age, Gender, Education, No_of_rooms, Live_with_someone.baseline) %>%
+  tbl_summary(missing_text = "NA's") %>%
+  modify_spanning_header(starts_with("stat_") ~ "**Amphibian owners n (%)**") %>%
+  modify_header(label = "") %>%
+  bold_labels()
+
+plot.amphibian # plot table
+
+# Baseline demographics table - arachnid owners
+plot.arachnid <- baseline_dummy_data %>%
+  subset(Arachnid == 1) %>%
+  select(Age, Gender, Education, No_of_rooms, Live_with_someone.baseline) %>%
+  tbl_summary(missing_text = "NA's") %>%
+  modify_spanning_header(starts_with("stat_") ~ "**Arachnid owners n (%)**") %>%
+  modify_header(label = "") %>%
+  bold_labels()
+
+plot.arachnid # plot table
+
+# Baseline demographics table - insect owners
+plot.insects <- baseline_dummy_data %>%
+  subset(Insects == 1) %>%
+  select(Age, Gender, Education, No_of_rooms, Live_with_someone.baseline) %>%
+  tbl_summary(missing_text = "NA's") %>%
+  modify_spanning_header(starts_with("stat_") ~ "**Insect owners n (%)**") %>%
+  modify_header(label = "") %>%
+  bold_labels()
+
+plot.insects # plot table
+
+# Baseline demographics table - snail owners
+plot.snails <- baseline_dummy_data %>%
+  subset(Snails == 1) %>%
+  select(Age, Gender, Education, No_of_rooms, Live_with_someone.baseline) %>%
+  tbl_summary(missing_text = "NA's") %>%
+  modify_spanning_header(starts_with("stat_") ~ "**Snail owners n (%)**") %>%
+  modify_header(label = "") %>%
+  bold_labels()
+
+plot.snails # plot table
+
+# Baseline demographics table - non owners
+plot.nopets <- baseline_dummy_data %>%
+  subset(Pets.base == 0) %>%
+  select(Age, Gender, Education, No_of_rooms, Live_with_someone.baseline) %>%
+  tbl_summary(missing_text = "NA's") %>%
+  modify_spanning_header(starts_with("stat_") ~ "**Non owners n (%)**") %>%
+  modify_header(label = "") %>%
+  bold_labels()
+
+plot.nopets # plot table
+
+```
+
+#Baseline demographics - Calculate NA's per group as percentage of all participants.
+
+```{r Baseline demographics - Calculate NAs}
+
+# Age
+sum(is.na(baseline_dummy_data$Age)) / (nrow(baseline_dummy_data)) * 100
+# Gender
+sum(is.na(baseline_dummy_data$Gender)) / (nrow(baseline_dummy_data)) * 100
+# Education
+sum(is.na(baseline_dummy_data$Education)) / (nrow(baseline_dummy_data)) * 100
+# Number of rooms
+sum(is.na(baseline_dummy_data$No_of_rooms)) / (nrow(baseline_dummy_data)) * 100
+# Live with someone
+sum(is.na(baseline_dummy_data$Live_with_someone.baseline)) / (nrow(baseline_dummy_data)) * 100
+# Pet owners
+sum(is.na(baseline_dummy_data$Pets.base)) / (nrow(baseline_dummy_data)) * 100
+# Dog owners
+sum(is.na(baseline_dummy_data$Dogs)) / (nrow(baseline_dummy_data)) * 100
+# Cat owners
+sum(is.na(baseline_dummy_data$Cats)) / (nrow(baseline_dummy_data)) * 100
+# Cat and dog owners
+sum(is.na(baseline_dummy_data$Cats_and_dogs.base)) / (nrow(baseline_dummy_data)) * 100
+# Cat or dog owners
+sum(is.na(baseline_dummy_data$Cats_or_dogs.base)) / (nrow(baseline_dummy_data)) * 100
+# Other pet owners
+sum(is.na(baseline_dummy_data$Other.base)) / (nrow(baseline_dummy_data)) * 100
+# Fish owner
+sum(is.na(baseline_dummy_data$Fish)) / (nrow(baseline_dummy_data)) * 100
+# Reptile owners
+sum(is.na(baseline_dummy_data$Reptiles)) / (nrow(baseline_dummy_data)) * 100
+# Small rodent owners
+sum(is.na(baseline_dummy_data$Small_rodents)) / (nrow(baseline_dummy_data)) * 100
+# Small other mammal owners
+sum(is.na(baseline_dummy_data$Small_other_mammals)) / (nrow(baseline_dummy_data)) * 100
+# Farm animal owners
+sum(is.na(baseline_dummy_data$Farm_animals)) / (nrow(baseline_dummy_data)) * 100
+# Horse owners
+sum(is.na(baseline_dummy_data$Horses)) / (nrow(baseline_dummy_data)) * 100
+# Amphibian owners
+sum(is.na(baseline_dummy_data$Amphibian)) / (nrow(baseline_dummy_data)) * 100
+# Arachnid owners
+sum(is.na(baseline_dummy_data$Arachnid)) / (nrow(baseline_dummy_data)) * 100
+# Insect owners
+sum(is.na(baseline_dummy_data$Insects)) / (nrow(baseline_dummy_data)) * 100
+# Snail owners
+sum(is.na(baseline_dummy_data$Snails)) / (nrow(baseline_dummy_data)) * 100
+
+```
+
+#Baseline demographics means and SD's for mental health scores - Pet owners
+
+```{r Mean and SD - Pet owners}
+
+# Prepare - pet owners
+petsum_pets <- baseline_dummy_data %>%
+  subset(Pets.base == 1)
+
+# PHQ-9 mean and sd - pet owners
+mean(petsum_pets$Score_phq_baseline, na.rm = TRUE)
+sd(petsum_pets$Score_phq_baseline, na.rm = TRUE)
+
+# GAD-7 mean and sd - pet owners
+mean(petsum_pets$Score_gad_baseline, na.rm = TRUE)
+sd(petsum_pets$Score_gad_baseline, na.rm = TRUE)
+
+# UCLA loneliness (4-item) mean and sd - pet owners
+mean(petsum_pets$Score_lone_baseline, na.rm = TRUE)
+sd(petsum_pets$Score_lone_baseline, na.rm = TRUE)
+
+# MASQ-AD mean and sd - pet owners
+mean(petsum_pets$Score_masq_baseline, na.rm = TRUE)
+sd(petsum_pets$Score_masq_baseline, na.rm = TRUE)
+
+```
+
+#Baseline demographics means and SD's for mental health scores - Dog owners
+
+```{r Mean and SD - Dog owners}
+
+# Prepare - dog owners
+petsum_dogs <- baseline_dummy_data %>%
+  subset(Dogs == 1)
+
+# PHQ-9 mean and sd - dog owners
+mean(petsum_dogs$Score_phq_baseline, na.rm = TRUE)
+sd(petsum_dogs$Score_phq_baseline, na.rm = TRUE)
+
+# GAD-7 mean and sd - dog owners
+mean(petsum_dogs$Score_gad_baseline, na.rm = TRUE)
+sd(petsum_dogs$Score_gad_baseline, na.rm = TRUE)
+
+# UCLA loneliness (4-item) mean and sd - dog owners
+mean(petsum_dogs$Score_lone_baseline, na.rm = TRUE)
+sd(petsum_dogs$Score_lone_baseline, na.rm = TRUE)
+
+# MASQ-AD mean and sd - dog owners
+mean(petsum_dogs$Score_masq_baseline, na.rm = TRUE)
+sd(petsum_dogs$Score_masq_baseline, na.rm = TRUE)
+
+```
+
+#Baseline demographics means and SD's for mental health scores - Cat owners
+
+```{r Mean and SD - Cat owners}
+
+# Prepare - cat owners
+petsum_cats <- baseline_dummy_data %>%
+  subset(Cats == 1)
+
+# PHQ-9 mean and sd - cat owners
+mean(petsum_cats$Score_phq_baseline, na.rm = TRUE)
+sd(petsum_cats$Score_phq_baseline, na.rm = TRUE)
+
+# GAD-7 mean and sd - cat owners
+mean(petsum_cats$Score_gad_baseline, na.rm = TRUE)
+sd(petsum_cats$Score_gad_baseline, na.rm = TRUE)
+
+# UCLA loneliness (4-item) mean and sd - cat owners
+mean(petsum_cats$Score_lone_baseline, na.rm = TRUE)
+sd(petsum_cats$Score_lone_baseline, na.rm = TRUE)
+
+# MASQ-AD mean and sd - cat owners
+mean(petsum_cats$Score_masq_baseline, na.rm = TRUE)
+sd(petsum_cats$Score_masq_baseline, na.rm = TRUE)
+
+```
+
+#Baseline demographics means and SD's for mental health scores - Cat & dog owners
+
+```{r Mean and SD - Cat & dog owners}
+
+# Prepare - cat and dog owners
+petsum_cats.and.dogs <- baseline_dummy_data %>%
+  subset(Cats_and_dogs.base == 1)
+
+# PHQ-9 mean and sd - cat and dog owners
+mean(petsum_cats.and.dogs$Score_phq_baseline, na.rm = TRUE)
+sd(petsum_cats.and.dogs$Score_phq_baseline, na.rm = TRUE)
+
+# GAD-7 mean and sd - cat and dog owners
+mean(petsum_cats.and.dogs$Score_gad_baseline, na.rm = TRUE)
+sd(petsum_cats.and.dogs$Score_gad_baseline, na.rm = TRUE)
+
+# UCLA loneliness (4-item) mean and sd - cat and dog owners
+mean(petsum_cats.and.dogs$Score_lone_baseline, na.rm = TRUE)
+sd(petsum_cats.and.dogs$Score_lone_baseline, na.rm = TRUE)
+
+# MASQ-AD mean and sd - cat and dog owners
+mean(petsum_cats.and.dogs$Score_masq_baseline, na.rm = TRUE)
+sd(petsum_cats.and.dogs$Score_masq_baseline, na.rm = TRUE)
+
+```
+
+#Baseline demographics means and SD's for mental health scores - Cat or dog owners
+
+```{r Mean and SD - Cat or dog owners}
+
+# Prepare - cat or dog owners
+petsum_cats.or.dogs <- baseline_dummy_data %>%
+  subset(Cats_or_dogs.base == 1)
+
+# PHQ-9 mean and sd - cat or dog owners
+mean(petsum_cats.or.dogs$Score_phq_baseline, na.rm = TRUE)
+sd(petsum_cats.or.dogs$Score_phq_baseline, na.rm = TRUE)
+
+# GAD-7 mean and sd - cat or dog owners
+mean(petsum_cats.or.dogs$Score_gad_baseline, na.rm = TRUE)
+sd(petsum_cats.or.dogs$Score_gad_baseline, na.rm = TRUE)
+
+# UCLA loneliness (4-item) mean and sd - cat or dog owners
+mean(petsum_cats.or.dogs$Score_lone_baseline, na.rm = TRUE)
+sd(petsum_cats.or.dogs$Score_lone_baseline, na.rm = TRUE)
+
+# MASQ-AD mean and sd - cat or dog owners
+mean(petsum_cats.or.dogs$Score_masq_baseline, na.rm = TRUE)
+sd(petsum_cats.or.dogs$Score_masq_baseline, na.rm = TRUE)
+
+```
+
+#Baseline demographics means and SD's for mental health scores - Other owners
+
+```{r Mean and SD - Other owners}
+
+# Prepare - other owners
+petsum_others <- baseline_dummy_data %>%
+  subset(Other.base == 1)
+
+# PHQ-9 mean and sd - other owners
+mean(petsum_others$Score_phq_baseline, na.rm = TRUE)
+sd(petsum_others$Score_phq_baseline, na.rm = TRUE)
+
+# GAD-7 mean and sd - other owners
+mean(petsum_others$Score_gad_baseline, na.rm = TRUE)
+sd(petsum_others$Score_gad_baseline, na.rm = TRUE)
+
+# UCLA loneliness (4-item) mean and sd - other owners
+mean(petsum_others$Score_lone_baseline, na.rm = TRUE)
+sd(petsum_others$Score_lone_baseline, na.rm = TRUE)
+
+# MASQ-AD mean and sd - other owners
+mean(petsum_others$Score_masq_baseline, na.rm = TRUE)
+sd(petsum_others$Score_masq_baseline, na.rm = TRUE)
+
+```
+
+#Baseline demographics means and SD's for mental health scores - Non owners
+
+```{r Mean and SD - Non owners}
+
+# Prepare - non owners
+petsum_non.owners <- baseline_dummy_data %>%
+  subset(Non_owners.base == 1)
+
+# PHQ-9 mean and sd - non owners
+mean(petsum_non.owners$Score_phq_baseline, na.rm = TRUE)
+sd(petsum_non.owners$Score_phq_baseline, na.rm = TRUE)
+
+# GAD-7 mean and sd - non owners
+mean(petsum_non.owners$Score_gad_baseline, na.rm = TRUE)
+sd(petsum_non.owners$Score_gad_baseline, na.rm = TRUE)
+
+# UCLA loneliness (4-item) mean and sd - non owners
+mean(petsum_non.owners$Score_lone_baseline, na.rm = TRUE)
+sd(petsum_non.owners$Score_lone_baseline, na.rm = TRUE)
+
+# MASQ-AD mean and sd - non owners
+mean(petsum_non.owners$Score_masq_baseline, na.rm = TRUE)
+sd(petsum_non.owners$Score_masq_baseline, na.rm = TRUE)
+
+```
+
+#Baseline age bar plot per pet type.
+
+```{r Baseline age bar plot}
+
+# Prepare plot
+age_plot <- baseline_dummy_data %>%
+  select(Age, Non_owners.base, Pets.base, Dogs, Cats, Cats_and_dogs.base, Cats_or_dogs.base, Other.base) %>%
+  rename("no pet" = "Non_owners.base",
+         "pet" = "Pets.base",
+         "dog" = "Dogs",
+         "cat" = "Cats",
+         "cat+dog" = "Cats_and_dogs.base",
+         "cat&dog" = "Cats_or_dogs.base",
+         "other pet" = "Other.base"
+         ) # Select columns and rename for plot
+age_plot <- age_plot[!is.na(age_plot$Age),] # Exclude NA's
+age_plot <- melt(age_plot, id.vars = 'Age', variable.name = 'Pet_Type') # Melt data
+age_plot <- age_plot %>%
+  subset (value == 1) # Subset for pet owners who belongs in categories
+age_plot <- age_plot %>%
+  group_by(Pet_Type) %>%
+  count(Age) %>%
+  transmute(Age,
+            Percentage = as.numeric(n/sum(n))) # Count occurences for each pet type and calculate percentages
+# Plot
+ggplot(data = age_plot,
+       aes(x = Age,
+           y = Percentage,
+           fill = Pet_Type)) +
+  ggtitle("Age of different pet owners (%)") +
+  labs(fill = "Pet types") +
+  xlab("Age groups") +
+  ylab("% per group") +
+  geom_col(position = 'dodge') +
+  scale_y_continuous(labels = scales::percent) +
+  theme(plot.title = element_text(hjust = 0.5, size = 10, face = "bold"), # Headline text
+        axis.text = element_text(size = 6), # Percentages text
+        axis.text.x = element_text(size = 4), # Age groups text
+        axis.title.x = element_text(size = 9), # Age text
+        axis.title.y = element_text(size = 9), # % per group text
+        legend.title=element_text(size = 9)) # Pet types text
+
+```
+
+#Baseline gender bar plot per pet type.
+
+```{r Baseline gender bar plot}
+
+# Prepare plot
+gender_plot <- baseline_dummy_data %>%
+  select(Gender, Non_owners.base, Pets.base, Dogs, Cats, Cats_and_dogs.base, Cats_or_dogs.base, Other.base) %>%
+  rename("no pet" = "Non_owners.base",
+         "pet" = "Pets.base",
+         "dog" = "Dogs",
+         "cat" = "Cats",
+         "cat+dog" = "Cats_and_dogs.base",
+         "cat&dog" = "Cats_or_dogs.base",
+         "other pet" = "Other.base"
+         ) # Select columns and rename for plot
+gender_plot <- gender_plot[!is.na(gender_plot$Gender),] # Exclude NA's
+gender_plot <- melt(gender_plot, id.vars = 'Gender', variable.name = 'Pet_Type') # Melt data
+gender_plot <- gender_plot %>%
+  subset (value == 1) # Subset for pet owners who belongs in categories
+gender_plot <- gender_plot %>%
+  group_by(Pet_Type) %>%
+  count(Gender) %>%
+  transmute(Gender,
+            Percentage = as.numeric(n/sum(n))) # Count occurences for each pet type and calculate percentages
+# Plot
+ggplot(data = gender_plot,
+       aes(x = Gender,
+           y = Percentage,
+           fill = Pet_Type,
+           label = scales::percent(Percentage, accuracy = 1))) +
+  ggtitle("Gender of different pet owners (%)") +
+  labs(fill = "Pet types") +
+  xlab("Gender") +
+  ylab("% per group") +
+  geom_col(position = 'dodge') +
+  geom_text(position = position_dodge(width = 1),    # Move to center of bars
+            vjust = -0.5,    # Nudge above top of bar
+            size = 2) +
+  scale_y_continuous(labels = scales::percent) +
+  theme(plot.title = element_text(hjust = 0.5, size = 10, face = "bold"), # Headline text
+        axis.text = element_text(size = 4), # Percentages text
+        axis.text.x = element_text(size = 6), # Gender groups text
+        axis.title.x = element_text(size = 9), # Gender text
+        axis.title.y = element_text(size = 9), # % per group text
+        legend.title=element_text(size = 9)) # Pet types text
+
+```
+
+#Baseline education bar plot per pet type.
+
+```{r Baseline education bar plot}
+
+# Prepare plot
+education_plot <- baseline_dummy_data %>%
+  select(Education, Non_owners.base, Pets.base, Dogs, Cats, Cats_and_dogs.base, Cats_or_dogs.base, Other.base) %>%
+  rename("no pet" = "Non_owners.base",
+         "pet" = "Pets.base",
+         "dog" = "Dogs",
+         "cat" = "Cats",
+         "cat+dog" = "Cats_and_dogs.base",
+         "cat&dog" = "Cats_or_dogs.base",
+         "other pet" = "Other.base"
+         ) # Select columns and rename for plot
+education_plot <- education_plot[!is.na(education_plot$Education),] # Exclude NA's
+education_plot <- education_plot %>%
+  mutate(Education =
+           recode_factor(
+             Education,
+             "Bachelors or equivalent" = "Bachelor's or equivalent"
+             )
+         ) # Recode answers
+education_plot <- melt(education_plot, id.vars = 'Education', variable.name = 'Pet_Type') # Melt data
+education_plot <- education_plot %>%
+  subset (value == 1) # Subset for pet owners who belongs in categories
+levels(education_plot$Education) <- c("None of these", "GSCE or equivalent", "A-level or equivalent", "Bachelor's or equivalent", "Master's or equivalent", "Postgraduate or equivalent", "PhD") # Define levels
+education_plot <- education_plot %>%
+  group_by(Pet_Type) %>%
+  count(Education) %>%
+  transmute(Education,
+            Percentage = as.numeric(n/sum(n))) # Count occurences for each pet type and calculate percentages
+# PLot
+ggplot(data = education_plot,
+       aes(x = Education,
+           y = Percentage,
+           fill = Pet_Type,
+           label = scales::percent(Percentage, accuracy = 1))) +
+  ggtitle("Education of different pet owners (%)") +
+  labs(fill = "Pet types") +
+  xlab("Education") +
+  ylab("% per group") +
+  geom_col(position = 'dodge') +
+  geom_text(position = position_dodge(width = 1),    # Move to center of bars
+            vjust = -0.5,    # Nudge above top of bar
+            size = 1.7) +
+  scale_y_continuous(labels = scales::percent) +
+  theme(plot.title = element_text(hjust = 0.5, size = 10, face = "bold"), # Headline text
+        axis.text = element_text(size = 4), # Percentages text
+        axis.text.x = element_text(size = 3), # Education groups text
+        axis.title.x = element_text(size = 9), # Education text
+        axis.title.y = element_text(size = 9), # % per group text
+        legend.title=element_text(size = 9)) # Pet types text
+
+```
+
+#Baseline number of rooms bar plot per pet type.
+
+```{r Baseline number of rooms bar plot}
+
+# Prepare plot
+no.of.rooms_plot <- baseline_dummy_data %>%
+  select(No_of_rooms, Non_owners.base, Pets.base, Dogs, Cats, Cats_and_dogs.base, Cats_or_dogs.base, Other.base) %>%
+  rename("no pet" = "Non_owners.base",
+         "pet" = "Pets.base",
+         "dog" = "Dogs",
+         "cat" = "Cats",
+         "cat+dog" = "Cats_and_dogs.base",
+         "cat&dog" = "Cats_or_dogs.base",
+         "other pet" = "Other.base"
+         ) # Select columns and rename for plot
+no.of.rooms_plot <- no.of.rooms_plot[!is.na(no.of.rooms_plot$No_of_rooms),] # Exlude NA's
+no.of.rooms_plot <- melt(no.of.rooms_plot, id.vars = 'No_of_rooms', variable.name = 'Pet_Type') # Melt data
+no.of.rooms_plot <- no.of.rooms_plot %>%
+  subset (value == 1) # Subset for pet owners who belongs in categories
+no.of.rooms_plot <- no.of.rooms_plot %>%
+  group_by(Pet_Type) %>%
+  count(No_of_rooms) %>%
+  transmute(No_of_rooms,
+            Percentage = as.numeric(n/sum(n))) # Count occurences for each pet type and calculate percentages
+# Plot
+ggplot(data = no.of.rooms_plot,
+       aes(x = No_of_rooms,
+           y = Percentage,
+           fill = Pet_Type)) +
+  ggtitle("Number of rooms of different pet owners (%)") +
+  labs(fill = "Pet types") +
+  xlab("Number of rooms in home") +
+  ylab("% per group") +
+  geom_col(position = 'dodge') +
+  scale_y_continuous(labels = scales::percent) +
+  theme(plot.title = element_text(hjust = 0.5, size = 10, face = "bold"), # Headline text
+        axis.text = element_text(size = 6), # Percentages text
+        axis.text.x = element_text(size = 6), # Number of rooms text
+        axis.title.x = element_text(size = 8), # Number of rooms in home text
+        axis.title.y = element_text(size = 9), # % per group text
+        legend.title=element_text(size = 9)) # Pet types text
+
+```
+
+#Baseline "live with someone" bar plot per pet type.
+
+```{r Baseline live with someone bar plot}
+
+# Prepare plot
+live.with.someone_plot <- baseline_dummy_data %>%
+  select(Live_with_someone.baseline, Non_owners.base, Pets.base, Dogs, Cats, Cats_and_dogs.base, Cats_or_dogs.base, Other.base) %>%
+  rename("no pet" = "Non_owners.base",
+         "pet" = "Pets.base",
+         "dog" = "Dogs",
+         "cat" = "Cats",
+         "cat+dog" = "Cats_and_dogs.base",
+         "cat&dog" = "Cats_or_dogs.base",
+         "other pet" = "Other.base"
+         ) # Select columns and rename for plot
+live.with.someone_plot <- live.with.someone_plot[!is.na(live.with.someone_plot$Live_with_someone.baseline),] # Exlude NA's
+live.with.someone_plot$Live_with_someone.baseline <- as.numeric(as.character(live.with.someone_plot$Live_with_someone.baseline)) # Change to numeric
+live.with.someone_plot <- live.with.someone_plot %>%
+  mutate(Live_with_someone.baseline =
+           recode_factor(
+             Live_with_someone.baseline,
+             `0` = "No",
+             `1` = "Yes"
+             )
+         ) # Recode answers
+live.with.someone_plot <- melt(live.with.someone_plot, id.vars = 'Live_with_someone.baseline', variable.name = 'Pet_Type') # Melt data
+live.with.someone_plot <- live.with.someone_plot %>%
+  subset (value == 1) # Subset for pet owners who belongs in categories
+live.with.someone_plot <- live.with.someone_plot %>%
+  group_by(Pet_Type) %>%
+  count(Live_with_someone.baseline) %>%
+  transmute(Live_with_someone.baseline,
+            Percentage = as.numeric(n/sum(n))) # Count occurences for each pet type and calculate percentages
+# Plot
+ggplot(data = live.with.someone_plot,
+       aes(x = Live_with_someone.baseline,
+           y = Percentage,
+           fill = Pet_Type,
+           label = scales::percent(Percentage, accuracy = 1))) +
+  ggtitle("Baseline 'live with someone' - different pet owners (%)") +
+  labs(fill = "Pet types") +
+  xlab("Live with someone") +
+  ylab("% per group") +
+  geom_col(position = 'dodge') +
+  geom_text(position = position_dodge(width = 1), # Move to center of bars
+            vjust = -0.5, # Nudge above top of bar
+            size = 2) +
+  scale_y_continuous(labels = scales::percent) +
+  theme(plot.title = element_text(hjust = 0.5, size = 9, face = "bold"), # Headline text
+        axis.text = element_text(size = 6), # Percentages text
+        axis.text.x = element_text(size = 6), # Daily structure groups text
+        axis.title.x = element_text(size = 8), # Question text
+        axis.title.y = element_text(size = 9), # % per group text
+        legend.title=element_text(size = 9)) # Pet types text
+
+```
+
+#Baseline exercise bar plot per pet type.
+
+```{r Baseline exercise bar plot}
+
+# Prepare plot
+exercise_plot <- baseline_dummy_data %>%
+  select(Exercise_baseline, Non_owners.base, Pets.base, Dogs, Cats, Cats_and_dogs.base, Cats_or_dogs.base, Other.base) %>%
+  rename("no pet" = "Non_owners.base",
+         "pet" = "Pets.base",
+         "dog" = "Dogs",
+         "cat" = "Cats",
+         "cat+dog" = "Cats_and_dogs.base",
+         "cat&dog" = "Cats_or_dogs.base",
+         "other pet" = "Other.base"
+         ) # Select columns and rename for plot
+exercise_plot <- exercise_plot[!is.na(exercise_plot$Exercise_baseline),] # Exclude NA's
+exercise_plot$Exercise_baseline <- as.numeric(as.character(exercise_plot$Exercise_baseline)) # Change to numeric
+exercise_plot <- exercise_plot %>%
+  mutate(Exercise_baseline =
+           recode_factor(
+             Exercise_baseline,
+             `0` = "Not at all",
+             `1` = "One or two days",
+             `2` = "Several days",
+             `3` = "More than half the days",
+             `4` = "Nearly every or every day",
+             )
+         ) # Recode answers
+exercise_plot <- melt(exercise_plot, id.vars = 'Exercise_baseline', variable.name = 'Pet_Type') # Melt data
+exercise_plot <- exercise_plot %>%
+  subset (value == 1) # Subset for pet owners who belongs in categories
+exercise_plot <- exercise_plot %>%
+  group_by(Pet_Type) %>%
+  count(Exercise_baseline) %>%
+  transmute(Exercise_baseline,
+            Percentage = as.numeric(n/sum(n))) # Count occurences for each pet type and calculate percentages
+# Plot
+ggplot(data = exercise_plot,
+       aes(x = Exercise_baseline,
+           y = Percentage,
+           fill = Pet_Type,
+           label = scales::percent(Percentage, accuracy = 1))) +
+  ggtitle("Baseline exercise levels for different pet owners (%)") +
+  labs(fill = "Pet types") +
+  xlab("'Over the past two weeks, how often have you exercised?'") +
+  ylab("% per group") +
+  geom_col(position = 'dodge') +
+  geom_text(position = position_dodge(width = 1),    # Move to center of bars
+            vjust = -0.5, # Nudge above top of bar
+            size = 2) +
+  scale_y_continuous(labels = scales::percent) +
+  theme(plot.title = element_text(hjust = 0.5, size = 9, face = "bold"), # Headline text
+        axis.text = element_text(size = 3), # Percentages text
+        axis.text.x = element_text(size = 4), # Exercise groups text
+        axis.title.x = element_text(size = 9), # Question text
+        axis.title.y = element_text(size = 9), # % per group text
+        legend.title=element_text(size = 9)) # Pet types text
+
+```
+
+#Baseline daily structure bar plot per pet type.
+
+```{r Baseline daily structure bar plot}
+
+# Prepare plot
+dailystructure_plot <- baseline_dummy_data %>%
+  select(Daily_structure_baseline, Non_owners.base, Pets.base, Dogs, Cats, Cats_and_dogs.base, Cats_or_dogs.base, Other.base) %>%
+  rename("no pet" = "Non_owners.base",
+         "pet" = "Pets.base",
+         "dog" = "Dogs",
+         "cat" = "Cats",
+         "cat+dog" = "Cats_and_dogs.base",
+         "cat&dog" = "Cats_or_dogs.base",
+         "other pet" = "Other.base"
+         ) # Select columns and rename for plot
+dailystructure_plot <- dailystructure_plot[!is.na(dailystructure_plot$Daily_structure_baseline),] # Exclude NA's
+dailystructure_plot$Daily_structure_baseline <- as.numeric(as.character(dailystructure_plot$Daily_structure_baseline)) # Change to numeric
+dailystructure_plot <- dailystructure_plot %>%
+  mutate(Daily_structure_baseline =
+           recode_factor(
+             Daily_structure_baseline,
+             `0` = "Not at all",
+             `1` = "One or two days",
+             `2` = "Several days",
+             `3` = "More than half the days",
+             `4` = "Nearly every or every day",
+             )
+         ) # Recode answers
+dailystructure_plot <- melt(dailystructure_plot, id.vars = 'Daily_structure_baseline', variable.name = 'Pet_Type') # Melt data
+dailystructure_plot <- dailystructure_plot %>%
+  subset (value == 1) # Subset for pet owners who belongs in categories
+dailystructure_plot <- dailystructure_plot %>%
+  group_by(Pet_Type) %>%
+  count(Daily_structure_baseline) %>%
+  transmute(Daily_structure_baseline,
+            Percentage = as.numeric(n/sum(n))) # Count occurences for each pet type and calculate percentages
+# Plot
+ggplot(data = dailystructure_plot,
+       aes(x = Daily_structure_baseline,
+           y = Percentage,
+           fill = Pet_Type,
+           label = scales::percent(Percentage, accuracy = 1))) +
+  ggtitle("Baseline 'maintained daily structure' levels for different pet owners (%)") +
+  labs(fill = "Pet types") +
+  xlab("'Over the past two weeks, how often have you maintained your normal daily structure (wake up, bed time, meal times, etc.)?'") +
+  ylab("% per group") +
+  geom_col(position = 'dodge') +
+  geom_text(position = position_dodge(width = 1),    # Move to center of bars
+            vjust = -0.5, # Nudge above top of bar
+            size = 2) +
+  scale_y_continuous(labels = scales::percent) +
+  theme(plot.title = element_text(hjust = 0.5, size = 8, face = "bold"), # Headline text
+        axis.text = element_text(size = 3), # Percentages text
+        axis.text.x = element_text(size = 4), # Daily structure groups text
+        axis.title.x = element_text(size = 5), # Question text
+        axis.title.y = element_text(size = 9), # % per group text
+        legend.title=element_text(size = 9)) # Pet types text
+
+```
+
+#Baseline PHQ-9 scores pirate plot per pet type.
+
+```{r Baseline PHQ-9 scores pirate plot}
+
+# Prepare plot
+phq_plot <- baseline_dummy_data %>%
+  select(Score_phq_baseline, Non_owners.base, Pets.base, Dogs, Cats,  Cats_and_dogs.base, Cats_or_dogs.base, Other.base) %>%
+  rename("no pet" = "Non_owners.base",
+         "pet" = "Pets.base",
+         "dog" = "Dogs",
+         "cat" = "Cats",
+         "cat+dog" = "Cats_and_dogs.base",
+         "cat&dog" = "Cats_or_dogs.base",
+         "other pet" = "Other.base"
+         ) # Select columns and rename for plot
+phq_plot <- reshape2::melt(phq_plot, id.vars = 'Score_phq_baseline', variable.name = 'Pet_Type') # Melt data
+phq_plot <- phq_plot %>%
+  subset (value == 1) # Subset for pet owners who belongs in categories
+# Plot
+pirateplot(formula = Score_phq_baseline ~ Pet_Type,
+           data = phq_plot,
+           main = "Baseline PHQ-9 scores",
+           xlab = "Pet ownership",
+           ylab = "Mean scores",
+           point.cex = .3,
+           cex.names = 0.7)
+
+```
+
+#Baseline GAD-7 scores pirate plot per pet type.
+
+```{r Baseline GAD-7 scores pirate plot}
+
+# Prepare plot
+gad_plot <- baseline_dummy_data %>%
+  select(Score_gad_baseline, Non_owners.base, Pets.base, Dogs, Cats,  Cats_and_dogs.base, Cats_or_dogs.base, Other.base) %>%
+  rename("no pet" = "Non_owners.base",
+         "pet" = "Pets.base",
+         "dog" = "Dogs",
+         "cat" = "Cats",
+         "cat+dog" = "Cats_and_dogs.base",
+         "cat&dog" = "Cats_or_dogs.base",
+         "other pet" = "Other.base"
+         ) # Select columns and rename for plot
+gad_plot <- melt(gad_plot, id.vars = 'Score_gad_baseline', variable.name = 'Pet_Type') # Melt data
+gad_plot <- gad_plot %>%
+  subset (value == 1) # Subset for pet owners who belongs in categories
+# Plot
+pirateplot(formula = Score_gad_baseline ~ Pet_Type,
+           data = gad_plot,
+           main = "Baseline GAD-7 scores",
+           xlab = "Pet ownership",
+           ylab = "Mean scores",
+           point.cex = .3,
+           cex.names = 0.7)
+
+```
+
+#Baseline UCLA loneliness (4-item) scores pirate plot per pet type.
+
+```{r Baseline UCLA loneliness (4-item) scores pirate plot}
+
+# Prepare plot
+lone_plot <- baseline_dummy_data %>%
+  select(Score_lone_baseline, Non_owners.base, Pets.base, Dogs, Cats,  Cats_and_dogs.base, Cats_or_dogs.base, Other.base) %>%
+  rename("no pet" = "Non_owners.base",
+         "pet" = "Pets.base",
+         "dog" = "Dogs",
+         "cat" = "Cats",
+         "cat+dog" = "Cats_and_dogs.base",
+         "cat&dog" = "Cats_or_dogs.base",
+         "other pet" = "Other.base"
+         ) # Select columns and rename for plot
+lone_plot <- melt(lone_plot, id.vars = 'Score_lone_baseline', variable.name = 'Pet_Type') # Melt data
+lone_plot <- lone_plot %>%
+  subset (value == 1) # Subset for pet owners who belongs in categories
+# Plot
+pirateplot(formula = Score_lone_baseline ~ Pet_Type,
+           data = lone_plot,
+           main = "Baseline UCLA loneliness (4-item) scores",
+           xlab = "Pet ownership",
+           ylab = "Mean scores",
+           point.cex = .3,
+           cex.names = 0.7)
+
+```
+
+#Baseline MASQ-AD scores pirate plot per pet type.
+
+```{r Baseline MASQ-AD scores pirate plot}
+
+# Prepare plot
+masq_plot <- baseline_dummy_data %>%
+  select(Score_masq_baseline, Non_owners.base, Pets.base, Dogs, Cats,  Cats_and_dogs.base, Cats_or_dogs.base, Other.base) %>%
+  rename("no pet" = "Non_owners.base",
+         "pet" = "Pets.base",
+         "dog" = "Dogs",
+         "cat" = "Cats",
+         "cat+dog" = "Cats_and_dogs.base",
+         "cat&dog" = "Cats_or_dogs.base",
+         "other pet" = "Other.base"
+         ) # Select columns and rename for plot
+masq_plot <- melt(masq_plot, id.vars = 'Score_masq_baseline', variable.name = 'Pet_Type') # Melt data
+masq_plot <- masq_plot %>%
+  subset (value == 1) # Subset for pet owners who belongs in categories
+# Plot
+pirateplot(formula = Score_masq_baseline ~ Pet_Type,
+           data = masq_plot,
+           main = "Baseline MASQ-AD scores",
+           xlab = "Pet ownership",
+           ylab = "Mean scores",
+           point.cex = .3,
+           cex.names = 0.7)
+
+```
+
+#Mean PHQ-9 scores plot - per pet type at baseline, 3 months, 6 months, and 12 months.
+
+```{r Mean PHQ-9 scores plot}
+
+# Prepare PHQ-9 scores for plot
+prepare.phq_plot1 <- finaldata %>%
+  select(Login.ID, Score_phq_baseline, Score_phq_threemonths, Score_phq_sixmonths, Score_phq_twelvemonths) %>%
+  rename("Baseline" = "Score_phq_baseline",
+         "3 months" = "Score_phq_threemonths",
+         "6 months" = "Score_phq_sixmonths",
+         "12 months" = "Score_phq_twelvemonths") # Select columns and rename for plot
+prepare.phq_plot1 <- melt(prepare.phq_plot1, id.vars = 'Login.ID', variable.name = 'Time') # Melt data
+prepare.phq_plot1 <- rename(prepare.phq_plot1, "Phq" = value) # Rename value
+# Prepare pet categories for plot
+prepare.phq_plot2 <- finaldata %>%
+  select(Login.ID, Pets.base, have_pet.3months, have_pet.6months, have_pet.12months) %>%
+  rename("Baseline" = "Pets.base",
+         "3 months" = "have_pet.3months",
+         "6 months" = "have_pet.6months",
+         "12 months" = "have_pet.12months") # Select columns and rename for plot
+prepare.phq_plot2 <- melt(prepare.phq_plot2, id.vars = 'Login.ID', variable.name = 'Time') # Melt data
+prepare.phq_plot2 <- rename(prepare.phq_plot2, "Pet" = value) # Rename value
+prepare.phq_plot2 <- prepare.phq_plot2 %>%
+  mutate(Pet =
+           recode_factor(
+             Pet,
+             `0` = "No",
+             `1` = "Yes"
+             )
+         ) # Recode answers
+phq_plot <- prepare.phq_plot1 %>% right_join(prepare.phq_plot2, by=c("Login.ID","Time")) # Join data frames
+phq_plot <- na.omit(phq_plot) # Exlude NA's
+# Plot
+ggplot(phq_plot,
+       aes(x = Time,
+           y = Phq)) +
+  stat_summary(aes(group = Pet, color = Pet), geom = "line", fun.y = mean, size = 1) +
+  ggtitle("Mean PHQ-9 scores for pet owners vs. non owners") +
+  xlab("Time points") +
+  ylab("Mean PHQ-9 scores") +
+  labs(colour = "Pet ownership") +
+  theme(plot.title = element_text(hjust = 0.5, size = 10, face = "bold"), # Headline text
+        axis.text = element_text(size = 8), # y-values text
+        axis.text.x = element_text(size = 8), # Different time points text
+        axis.title.x = element_text(size = 9), # Time points text
+        axis.title.y = element_text(size = 9), # Mean PHQ-9 scores text
+        legend.title=element_text(size = 9)) # Pet ownersip text
+
+```
+
+#Mean GAD-7 scores plot - per pet type at baseline, 3 months, 6 months, and 12 months.
+
+```{r Mean GAD-7 scores plot}
+
+# Prepare GAD-7 scores for plot
+prepare.gad_plot1 <- finaldata %>%
+  select(Login.ID, Score_gad_baseline, Score_gad_threemonths, Score_gad_sixmonths, Score_gad_twelvemonths) %>%
+  rename("Baseline" = "Score_gad_baseline",
+         "3 months" = "Score_gad_threemonths",
+         "6 months" = "Score_gad_sixmonths",
+         "12 months" = "Score_gad_twelvemonths") # Select columns and rename for plot
+prepare.gad_plot1 <- melt(prepare.gad_plot1, id.vars = 'Login.ID', variable.name = 'Time') # Melt data
+prepare.gad_plot1 <- rename(prepare.gad_plot1, "Gad" = value) # Rename value
+# Prepare pet categories for plot
+prepare.gad_plot2 <- finaldata %>%
+  select(Login.ID, Pets.base, have_pet.3months, have_pet.6months, have_pet.12months) %>%
+  rename("Baseline" = "Pets.base",
+         "3 months" = "have_pet.3months",
+         "6 months" = "have_pet.6months",
+         "12 months" = "have_pet.12months") # Select columns and rename for plot
+prepare.gad_plot2 <- melt(prepare.gad_plot2, id.vars = 'Login.ID', variable.name = 'Time') # Melt data
+prepare.gad_plot2 <- rename(prepare.gad_plot2, "Pet" = value) # Rename value
+prepare.gad_plot2 <- prepare.gad_plot2 %>%
+  mutate(Pet =
+           recode_factor(
+             Pet,
+             `0` = "No",
+             `1` = "Yes"
+             )
+         ) # Recode answers
+gad_plot <- prepare.gad_plot1 %>% right_join(prepare.gad_plot2, by=c("Login.ID","Time")) # Join data frames
+gad_plot <- na.omit(gad_plot) # Exlude NA's
+# Plot
+ggplot(gad_plot,
+       aes(x = Time,
+           y = Gad)) +
+  stat_summary(aes(group = Pet, color = Pet), geom = "line", fun.y = mean, size = 1) +
+  ggtitle("Mean GAD-7 scores for pet owners vs. non owners") +
+  xlab("Time points") +
+  ylab("Mean GAD-7 scores") +
+  labs(colour = "Pet owners") +
+  theme(plot.title = element_text(hjust = 0.5, size = 10, face = "bold"), # Headline text
+        axis.text = element_text(size = 8), # y-values text
+        axis.text.x = element_text(size = 8), # Different ime points text
+        axis.title.x = element_text(size = 9), # Time points text
+        axis.title.y = element_text(size = 9), # Mean GAD-7 scores text
+        legend.title=element_text(size = 9)) # Pet owners text
+
+```
+
+#Mean UCLA loneliness (4-item) scores plot - per pet type at baseline, 3 months, 6 months, and 12 months.
+
+```{r Mean UCLA loneliness (4-item) scores plot}
+
+# Prepare UCLA loneliness (4-item) scores for plot
+prepare.lone_plot1 <- finaldata %>%
+  select(Login.ID, Score_lone_baseline, Score_lone_threemonths, Score_lone_sixmonths, Score_lone_twelvemonths) %>%
+  rename("Baseline" = "Score_lone_baseline",
+         "3 months" = "Score_lone_threemonths",
+         "6 months" = "Score_lone_sixmonths",
+         "12 months" = "Score_lone_twelvemonths") # Select columns and rename for plot
+prepare.lone_plot1 <- melt(prepare.lone_plot1, id.vars = 'Login.ID', variable.name = 'Time') # Melt data
+prepare.lone_plot1 <- rename(prepare.lone_plot1, "Lone" = value) # Rename value
+# Prepare pet categories for plot
+prepare.lone_plot2 <- finaldata %>%
+  select(Login.ID, Pets.base, have_pet.3months, have_pet.6months, have_pet.12months) %>%
+  rename("Baseline" = "Pets.base",
+         "3 months" = "have_pet.3months",
+         "6 months" = "have_pet.6months",
+         "12 months" = "have_pet.12months") # Select columns and rename for plot
+prepare.lone_plot2 <- melt(prepare.lone_plot2, id.vars = 'Login.ID', variable.name = 'Time') # Melt data
+prepare.lone_plot2 <- rename(prepare.lone_plot2, "Pet" = value) # Rename value
+prepare.lone_plot2 <- prepare.lone_plot2 %>%
+  mutate(Pet =
+           recode_factor(
+             Pet,
+             `0` = "No",
+             `1` = "Yes"
+             )
+         ) # Recode answers
+lone_plot <- prepare.lone_plot1 %>% right_join(prepare.lone_plot2, by=c("Login.ID","Time")) # Join data frames
+lone_plot <- na.omit(lone_plot) # Exclude NA's
+# Plot
+ggplot(lone_plot,
+       aes(x = Time,
+           y = Lone)) +
+  stat_summary(aes(group = Pet, color = Pet), geom = "line", fun.y = mean, size = 1) +
+  ggtitle("Mean UCLA loneliness (4-item) scores for pet owners vs. non owners") +
+  xlab("Time points") +
+  ylab("Mean UCLA loneliness (4-item) scores") +
+  labs(colour = "Pet owners") +
+  theme(plot.title = element_text(hjust = 0.5, size = 8, face = "bold"), # Headline text
+        axis.text = element_text(size = 8), # y-values text
+        axis.text.x = element_text(size = 8), # Different ime points text
+        axis.title.x = element_text(size = 9), # Time points text
+        axis.title.y = element_text(size = 9), # Mean UCLA loneliness scores text
+        legend.title=element_text(size = 9)) # Pet owners text
+
+```
+
+#Mean MASQ-AD scores plot - per pet type at baseline, 3 months, 6 months, and 12 months.
+
+```{r Mean MASQ-AD scores plot}
+
+# Prepare MASQ-AD scores for plot
+prepare.masq_plot1 <- finaldata %>%
+  select(Login.ID, Score_masq_baseline, Score_masq_threemonths, Score_masq_sixmonths, Score_masq_twelvemonths) %>%
+  rename("Baseline" = "Score_masq_baseline",
+         "3 months" = "Score_masq_threemonths",
+         "6 months" = "Score_masq_sixmonths",
+         "12 months" = "Score_masq_twelvemonths") # Select columns and rename for plot
+prepare.masq_plot1 <- melt(prepare.masq_plot1, id.vars = 'Login.ID', variable.name = 'Time') # Melt data
+prepare.masq_plot1 <- rename(prepare.masq_plot1, "Masq" = value) # Rename value
+
+prepare.masq_plot2 <- finaldata %>%
+  select(Login.ID, Pets.base, have_pet.3months, have_pet.6months, have_pet.12months) %>%
+  rename("Baseline" = "Pets.base",
+         "3 months" = "have_pet.3months",
+         "6 months" = "have_pet.6months",
+         "12 months" = "have_pet.12months") # Select columns and rename for plot
+prepare.masq_plot2 <- melt(prepare.masq_plot2, id.vars = 'Login.ID', variable.name = 'Time') # Melt data
+prepare.masq_plot2 <- rename(prepare.masq_plot2, "Pet" = value) # Rename value
+prepare.masq_plot2 <- prepare.masq_plot2 %>%
+  mutate(Pet =
+           recode_factor(
+             Pet,
+             `0` = "No",
+             `1` = "Yes"
+             )
+         ) # Recode answers
+masq_plot <- prepare.masq_plot1 %>% right_join(prepare.masq_plot2, by=c("Login.ID","Time")) # Join data frames
+masq_plot <- na.omit(masq_plot) # Exclude NA's
+# PLot
+ggplot(masq_plot,
+       aes(x = Time,
+           y = Masq)) +
+  stat_summary(aes(group = Pet, color = Pet), geom = "line", fun.y = mean, size = 1) +
+  ggtitle("Mean MASQ-AD scores for pet owners vs. non owners") +
+  xlab("Time points") +
+  ylab("Mean MASQ-AD scores") +
+  labs(colour = "Pet owners") +
+  theme(plot.title = element_text(hjust = 0.5, size = 10, face = "bold"), # Headline text
+        axis.text = element_text(size = 8), # y-values text
+        axis.text.x = element_text(size = 8), # Different ime points text
+        axis.title.x = element_text(size = 9), # Time points text
+        axis.title.y = element_text(size = 9), # Mean MASQ-AD scores text
+        legend.title=element_text(size = 9)) # Pet owners text
+
+```
+
+#Calculate mean and SD for mental health scores for pet owners vs. non owners at baseline, 3 months, 6 months, and 12 months.
+
+```{r Mean and SD for mental health scores - pet owners vs. non owners}
+
+# Prepare - pet owners baseline
+petsum_owners.base <- finaldata %>%
+  subset(Pets.base == 1)
+
+# Prepare - non owners baseline
+petsum_non.owners.base <- finaldata %>%
+  subset(Pets.base == 0)
+
+# Prepare - pet owners 3 months
+petsum_owners.3months <- finaldata %>%
+  subset(have_pet.3months == 1)
+
+# Prepare - non owners 3 months
+petsum_non.owners.3months <- finaldata %>%
+  subset(have_pet.3months == 0)
+
+# Prepare - pet owners 6 months
+petsum_owners.6months <- finaldata %>%
+  subset(have_pet.6months == 1)
+
+# Prepare - non owners 6 months
+petsum_non.owners.6months <- finaldata %>%
+  subset(have_pet.6months == 0)
+
+# Prepare - pet owners 12 months
+petsum_owners.12months <- finaldata %>%
+  subset(have_pet.12months == 1)
+
+# Prepare - non owners 12 months
+petsum_non.owners.12months <- finaldata %>%
+  subset(have_pet.12months == 0)
+
+# Baseline PHQ-9 mean and sd - pet owners
+mean(petsum_owners.base$Score_phq_baseline, na.rm = TRUE)
+sd(petsum_owners.base$Score_phq_baseline, na.rm = TRUE)
+
+# Baseline PHQ-9 mean and sd - non owners
+mean(petsum_non.owners.base$Score_phq_baseline, na.rm = TRUE)
+sd(petsum_non.owners.base$Score_phq_baseline, na.rm = TRUE)
+
+# Baseline GAD-7 mean and sd - pet owners
+mean(petsum_owners.base$Score_gad_baseline, na.rm = TRUE)
+sd(petsum_owners.base$Score_gad_baseline, na.rm = TRUE)
+
+# Baseline GAD-7 mean and sd - non owners
+mean(petsum_non.owners.base$Score_gad_baseline, na.rm = TRUE)
+sd(petsum_non.owners.base$Score_gad_baseline, na.rm = TRUE)
+
+# Baseline UCLA loneliness (4-item) mean and sd - pet owners
+mean(petsum_owners.base$Score_lone_baseline, na.rm = TRUE)
+sd(petsum_owners.base$Score_lone_baseline, na.rm = TRUE)
+
+# Baseline UCLA loneliness (4-item) mean and sd - non owners
+mean(petsum_non.owners.base$Score_lone_baseline, na.rm = TRUE)
+sd(petsum_non.owners.base$Score_lone_baseline, na.rm = TRUE)
+
+# Baseline MASQ-AD mean and sd - pet owners
+mean(petsum_owners.base$Score_masq_baseline, na.rm = TRUE)
+sd(petsum_owners.base$Score_masq_baseline, na.rm = TRUE)
+
+# Baseline MASQ-AD mean and sd - non owners
+mean(petsum_non.owners.base$Score_masq_baseline, na.rm = TRUE)
+sd(petsum_non.owners.base$Score_masq_baseline, na.rm = TRUE)
+
+# 3 months PHQ-9 mean and sd - pet owners
+mean(petsum_owners.3months$Score_phq_threemonths, na.rm = TRUE)
+sd(petsum_owners.3months$Score_phq_threemonths, na.rm = TRUE)
+
+# 3 months PHQ-9 mean and sd - non owners
+mean(petsum_non.owners.3months$Score_phq_threemonths, na.rm = TRUE)
+sd(petsum_non.owners.3months$Score_phq_threemonths, na.rm = TRUE)
+
+# 3 months GAD-7 mean and sd - pet owners
+mean(petsum_owners.3months$Score_gad_threemonths, na.rm = TRUE)
+sd(petsum_owners.3months$Score_gad_threemonths, na.rm = TRUE)
+
+# 3 months GAD-7 mean and sd - non owners
+mean(petsum_non.owners.3months$Score_gad_threemonths, na.rm = TRUE)
+sd(petsum_non.owners.3months$Score_gad_threemonths, na.rm = TRUE)
+
+# 3 months UCLA loneliness (4-item) mean and sd - pet owners
+mean(petsum_owners.3months$Score_lone_threemonths, na.rm = TRUE)
+sd(petsum_owners.3months$Score_lone_threemonths, na.rm = TRUE)
+
+# 3 months UCLA loneliness (4-item) mean and sd - non owners
+mean(petsum_non.owners.3months$Score_lone_threemonths, na.rm = TRUE)
+sd(petsum_non.owners.3months$Score_lone_threemonths, na.rm = TRUE)
+
+# 3 months MASQ-AD mean and sd - pet owners
+mean(petsum_owners.3months$Score_masq_threemonths, na.rm = TRUE)
+sd(petsum_owners.3months$Score_masq_threemonths, na.rm = TRUE)
+
+# 3 months MASQ-AD mean and sd - non owners
+mean(petsum_non.owners.3months$Score_masq_threemonths, na.rm = TRUE)
+sd(petsum_non.owners.3months$Score_masq_threemonths, na.rm = TRUE)
+
+# 6 months PHQ-9 mean and sd - pet owners
+mean(petsum_owners.6months$Score_phq_sixmonths, na.rm = TRUE)
+sd(petsum_owners.6months$Score_phq_sixmonths, na.rm = TRUE)
+
+# 6 months PHQ-9 mean and sd - non owners
+mean(petsum_non.owners.6months$Score_phq_sixmonths, na.rm = TRUE)
+sd(petsum_non.owners.6months$Score_phq_sixmonths, na.rm = TRUE)
+
+# 6 months GAD-7 mean and sd - pet owners
+mean(petsum_owners.6months$Score_gad_sixmonths, na.rm = TRUE)
+sd(petsum_owners.6months$Score_gad_sixmonths, na.rm = TRUE)
+
+# 6 months GAD-7 mean and sd - non owners
+mean(petsum_non.owners.6months$Score_gad_sixmonths, na.rm = TRUE)
+sd(petsum_non.owners.6months$Score_gad_sixmonths, na.rm = TRUE)
+
+# 6 months UCLA loneliness (4-item) mean and sd - pet owners
+mean(petsum_owners.6months$Score_lone_sixmonths, na.rm = TRUE)
+sd(petsum_owners.6months$Score_lone_sixmonths, na.rm = TRUE)
+
+# 6 months UCLA loneliness (4-item) mean and sd - non owners
+mean(petsum_non.owners.6months$Score_lone_sixmonths, na.rm = TRUE)
+sd(petsum_non.owners.6months$Score_lone_sixmonths, na.rm = TRUE)
+
+# 6 months MASQ-AD mean and sd - pet owners
+mean(petsum_owners.6months$Score_masq_sixmonths, na.rm = TRUE)
+sd(petsum_owners.6months$Score_masq_sixmonths, na.rm = TRUE)
+
+# 6 months MASQ-AD mean and sd - non owners
+mean(petsum_non.owners.6months$Score_masq_sixmonths, na.rm = TRUE)
+sd(petsum_non.owners.6months$Score_masq_sixmonths, na.rm = TRUE)
+
+# 12 months PHQ-9 mean and sd - pet owners
+mean(petsum_owners.12months$Score_phq_sixmonths, na.rm = TRUE)
+sd(petsum_owners.12months$Score_phq_sixmonths, na.rm = TRUE)
+
+# 12 months PHQ-9 mean and sd - non owners
+mean(petsum_non.owners.12months$Score_phq_sixmonths, na.rm = TRUE)
+sd(petsum_non.owners.12months$Score_phq_sixmonths, na.rm = TRUE)
+
+# 12 months GAD-7 mean and sd - pet owners
+mean(petsum_owners.12months$Score_gad_sixmonths, na.rm = TRUE)
+sd(petsum_owners.12months$Score_gad_sixmonths, na.rm = TRUE)
+
+# 12 months GAD-7 mean and sd - non owners
+mean(petsum_non.owners.12months$Score_gad_sixmonths, na.rm = TRUE)
+sd(petsum_non.owners.12months$Score_gad_sixmonths, na.rm = TRUE)
+
+# 12 months UCLA loneliness (4-item) mean and sd - pet owners
+mean(petsum_owners.12months$Score_lone_sixmonths, na.rm = TRUE)
+sd(petsum_owners.12months$Score_lone_sixmonths, na.rm = TRUE)
+
+# 12 months UCLA loneliness (4-item) mean and sd - non owners
+mean(petsum_non.owners.12months$Score_lone_sixmonths, na.rm = TRUE)
+sd(petsum_non.owners.12months$Score_lone_sixmonths, na.rm = TRUE)
+
+# 12 months MASQ-AD mean and sd - pet owners
+mean(petsum_owners.12months$Score_masq_sixmonths, na.rm = TRUE)
+sd(petsum_owners.12months$Score_masq_sixmonths, na.rm = TRUE)
+
+# 12 months MASQ-AD mean and sd - non owners
+mean(petsum_non.owners.12months$Score_masq_sixmonths, na.rm = TRUE)
+sd(petsum_non.owners.12months$Score_masq_sixmonths, na.rm = TRUE)
+
+```
+
+#Model 1-6: Baseline mixed effect linear regression models - pet type ownership and PHQ-9-scores.
+
+```{r Model 1-6}
+
+# Model 1: Is pet ownership predictive of reduced symptoms of depression?
+model1 <- lmer(Score_phq_baseline ~ Pets.base +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model1) # Get summary including estimates, B and t-values
+anova(model1) # Get F-value
+r.squaredGLMM(model1) # Get R2
+#confint(model1) # Get CI's
+report(model1) # Report summary
+
+# Model 2: Is dog ownership predictive of reduced symptoms of depression?
+model2 <- lmer(Score_phq_baseline ~ Dogs +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model2) # Get summary including estimates, B and t-values
+anova(model2) # Get F-value
+r.squaredGLMM(model2) # Get R2
+#confint(model2) # Get CI's
+report(model2) # Report summary
+
+# Model 3: Is cat ownership predictive of reduced symptoms of depression?
+model3 <- lmer(Score_phq_baseline ~ Cats +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model3) # Get summary including estimates, B and t-values?
+anova(model3) # Get F-value
+r.squaredGLMM(model3) # Get R2
+#confint(model3) # Get CI's
+report(model3) # Report summary
+
+# Model 4: Is cat and dog ownership predictive of reduced symptoms of depression?
+model4 <- lmer(Score_phq_baseline ~ Cats_and_dogs.base +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model4) # Get summary including estimates, B and t-values
+anova(model4) # Get F-value
+r.squaredGLMM(model4) # Get R2
+#confint(model4) # Get CI's
+report(model4) # Report summary
+
+# Model 5: Is cat or dog ownership predictive of reduced symptoms of depression?
+model5 <- lmer(Score_phq_baseline ~ Cats_or_dogs.base +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model5) # Get summary including estimates, B and t-values
+anova(model5) # Get F-value
+r.squaredGLMM(model5) # Get R2
+#confint(model5) # Get CI's
+report(model5) # Report summary
+
+# Model 6: Is ownership of other pets than cats and dogs predictive of reduced symptoms of depression?
+model6 <- lmer(Score_phq_baseline ~ Other.base +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model6) # Get summary including estimates, B and t-values
+anova(model6) # Get F-value
+r.squaredGLMM(model6) # Get R2
+#confint(model6) # Get CI's
+report(model6) # Report summary
+
+```
+
+#Model 7-12: Baseline mixed effect linear regression models - pet type ownership and GAD-7-scores.
+
+```{r Model 7-12}
+
+# Model 7: Is pet ownership predictive of reduced symptoms of anxiety?
+model7 <- lmer(Score_gad_baseline ~ Pets.base +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model7) # Get summary including estimates, B and t-values
+anova(model7) # Get F-value
+r.squaredGLMM(model7) # Get R2
+#confint(model7) # Get CI's
+report(model7) # Report summary
+
+# Model 8: Is dog ownership predictive of reduced symptoms of anxiety?
+model8 <- lmer(Score_gad_baseline ~ Dogs +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model8) # Get summary including estimates, B and t-values
+anova(model8) # Get F-value
+r.squaredGLMM(model8) # Get R2
+#confint(model8) # Get CI's
+report(model8) # Report summary
+
+# Model 9: Is cat ownership predictive of reduced symptoms of anxiety?
+model9 <- lmer(Score_gad_baseline ~ Cats +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model9) # Get summary including estimates, B and t-values?
+anova(model9) # Get F-value
+r.squaredGLMM(model9) # Get R2
+#confint(model9) # Get CI's
+report(model9) # Report summary
+
+# Model 10: Is cat and dog ownership predictive of reduced symptoms of anxiety?
+model10 <- lmer(Score_gad_baseline ~ Cats_and_dogs.base +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model10) # Get summary including estimates, B and t-values
+anova(model10) # Get F-value
+r.squaredGLMM(model10) # Get R2
+#confint(model10) # Get CI's
+report(model10) # Report summary
+
+# Model 11: Is cat or dog ownership predictive of reduced symptoms of anxiety?
+model11 <- lmer(Score_gad_baseline ~ Cats_or_dogs.base +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model11) # Get summary including estimates, B and t-values
+anova(model11) # Get F-value
+r.squaredGLMM(model11) # Get R2
+#confint(model11) # Get CI's
+report(model11) # Report summary
+
+# Model 12: Is ownership of other pets than cats and dogs predictive of reduced symptoms of anxiety?
+model12 <- lmer(Score_gad_baseline ~ Other.base +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model12) # Get summary including estimates, B and t-values
+anova(model12) # Get F-value
+r.squaredGLMM(model12) # Get R2
+#confint(model12) # Get CI's
+report(model12) # Report summary
+
+```
+
+#Model 13-18: Baseline mixed effect linear regression models - pet type ownership and UCLA loneliness (4-item) scores.
+
+```{r Model 13-18}
+
+# Model 13: Is pet ownership predictive of reduced symptoms of loneliness?
+model13 <- lmer(Score_lone_baseline ~ Pets.base +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms) +
+                 (1|Live_with_someone.baseline),
+               data = finaldata)
+
+summary(model13) # Get summary including estimates, B and t-values
+anova(model13) # Get F-value
+r.squaredGLMM(model13) # Get R2
+#confint(model13) # Get CI's
+report(model13) # Report summary
+
+# Model 14: Is dog ownership predictive of reduced symptoms of loneliness?
+model14 <- lmer(Score_lone_baseline ~ Dogs +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms) +
+                 (1|Live_with_someone.baseline),
+               data = finaldata)
+
+summary(model14) # Get summary including estimates, B and t-values
+anova(model14) # Get F-value
+r.squaredGLMM(model14) # Get R2
+#confint(model14) # Get CI's
+report(model14) # Report summary
+
+# Model 15: Is cat ownership predictive of reduced symptoms of loneliness?
+model15 <- lmer(Score_lone_baseline ~ Cats +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms) +
+                 (1|Live_with_someone.baseline),
+               data = finaldata)
+
+summary(model15) # Get summary including estimates, B and t-values?
+anova(model15) # Get F-value
+r.squaredGLMM(model15) # Get R2
+#confint(model15) # Get CI's
+report(model15) # Report summary
+
+# Model 16: Is cat and dog ownership predictive of reduced symptoms of loneliness?
+model16 <- lmer(Score_lone_baseline ~ Cats_and_dogs.base +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms) +
+                 (1|Live_with_someone.baseline),
+               data = finaldata)
+
+summary(model16) # Get summary including estimates, B and t-values
+anova(model16) # Get F-value
+r.squaredGLMM(model16) # Get R2
+#confint(model16) # Get CI's
+report(model16) # Report summary
+
+# Model 17: Is cat or dog ownership predictive of reduced symptoms of loneliness?
+model17 <- lmer(Score_lone_baseline ~ Cats_or_dogs.base +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms) +
+                 (1|Live_with_someone.baseline),
+               data = finaldata)
+
+summary(model17) # Get summary including estimates, B and t-values
+anova(model17) # Get F-value
+r.squaredGLMM(model17) # Get R2
+#confint(model17) # Get CI's
+report(model17) # Report summary
+
+# Model 18: Is ownership of other pets than cats and dogs predictive of reduced symptoms of loneliness?
+model18 <- lmer(Score_lone_baseline ~ Other.base +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms) +
+                 (1|Live_with_someone.baseline),
+               data = finaldata)
+
+summary(model18) # Get summary including estimates, B and t-values
+anova(model18) # Get F-value
+r.squaredGLMM(model18) # Get R2
+#confint(model18) # Get CI's
+report(model18) # Report summary
+
+```
+
+#Model 19-24: Baseline mixed effect linear regression models - pet type ownership and MASQ-AD scores.
+
+```{r Model 19-24}
+
+# Model 19: Is pet ownership predictive of reduced symptoms of anhedonia (higher MASQ-AD scores)?
+model19 <- lmer(Score_masq_baseline ~ Pets.base +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model19) # Get summary including estimates, B and t-values
+anova(model19) # Get F-value
+r.squaredGLMM(model19) # Get R2
+#confint(model19) # Get CI's
+report(model19) # Report summary
+
+# Model 20: Is dog ownership predictive of reduced symptoms of anhedonia (higher MASQ-AD scores)?
+model20 <- lmer(Score_masq_baseline ~ Dogs +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model20) # Get summary including estimates, B and t-values
+anova(model20) # Get F-value
+r.squaredGLMM(model20) # Get R2
+#confint(model20) # Get CI's
+report(model20) # Report summary
+
+# Model 21: Is cat ownership predictive of reduced symptoms of anhedonia (higher MASQ-AD scores)?
+model21 <- lmer(Score_masq_baseline ~ Cats +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model21) # Get summary including estimates, B and t-values?
+anova(model21) # Get F-value
+r.squaredGLMM(model21) # Get R2
+#confint(model21) # Get CI's
+report(model21) # Report summary
+
+# Model 22: Is cat and dog ownership predictive of reduced symptoms of anhedonia (higher MASQ-AD scores)?
+model22 <- lmer(Score_masq_baseline ~ Cats_and_dogs.base +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model22) # Get summary including estimates, B and t-values
+anova(model22) # Get F-value
+r.squaredGLMM(model22) # Get R2
+#confint(model22) # Get CI's
+report(model22) # Report summary
+
+# Model 23: Is cat or dog ownership predictive of reduced symptoms of anhedonia (higher MASQ-AD scores)?
+model23 <- lmer(Score_masq_baseline ~ Cats_or_dogs.base +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model23) # Get summary including estimates, B and t-values
+anova(model23) # Get F-value
+r.squaredGLMM(model23) # Get R2
+#confint(model23) # Get CI's
+report(model23) # Report summary
+
+# Model 24: Is ownership of other petsthan cats and dogs predictive of reduced symptoms of anhedonia (higher MASQ-AD scores)?
+model24 <- lmer(Score_masq_baseline ~ Other.base +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model24) # Get summary including estimates, B and t-values
+anova(model24) # Get F-value
+r.squaredGLMM(model24) # Get R2
+#confint(model24) # Get CI's
+report(model24) # Report summary
+
+```
+
+#Model 25-28: Mixed effect linear regression models - Pet ownership after 3 months and mental health scores.
+
+```{r Model 25-28}
+
+# Model 25: Is pet ownership after 3 months predictive of reduced symptoms of depression at 3 months?
+model25 <- lmer(Score_phq_threemonths ~ have_pet.3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model25) # Get summary including estimates, B and t-values
+anova(model25) # Get F-value
+r.squaredGLMM(model25) # Get R2
+#confint(model25) # Get CI's
+report(model25) # Report summary
+
+# Model 26: Is pet ownership after 3 months predictive of reduced symptoms of anxiety at 3 months?
+model26 <- lmer(Score_gad_threemonths ~ have_pet.3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model26) # Get summary including estimates, B and t-values
+anova(model26) # Get F-value
+r.squaredGLMM(model26) # Get R2
+#confint(model26) # Get CI's
+report(model26) # Report summary
+
+# Model 27: Is pet ownership after 3 months predictive of reduced symptoms of loneliness at 3 months?
+model27 <- lmer(Score_lone_threemonths ~ have_pet.3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms) +
+                 (1|Live_with_someone.3months),
+               data = finaldata)
+
+summary(model27) # Get summary including estimates, B and t-values
+anova(model27) # Get F-value
+r.squaredGLMM(model27) # Get R2
+#confint(model27) # Get CI's
+report(model27) # Report summary
+
+# Model 28: Is pet ownership after 3 months predictive of reduced symptoms of anhedonia (higher MASQ-AD scores) at 3 months?
+model28 <- lmer(Score_masq_threemonths ~ have_pet.3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model28) # Get summary including estimates, B and t-values
+anova(model28) # Get F-value
+r.squaredGLMM(model28) # Get R2
+#confint(model28) # Get CI's
+report(model28) # Report summary
+
+```
+
+#Model 29-32: Mixed effect linear regression models - Pet ownership after 6 months and mental health scores.
+
+```{r Model 29-32}
+
+# Model 29: Is pet ownership after 6 months predictive of reduced symptoms of depression at 6 months?
+model29 <- lmer(Score_phq_sixmonths ~ have_pet.6months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model29) # Get summary including estimates, B and t-values
+anova(model29) # Get F-value
+r.squaredGLMM(model29) # Get R2
+#confint(model29) # Get CI's
+report(model29) # Report summary
+
+# Model 30: Is pet ownership after 6 months predictive of reduced symptoms of anxiety at 6 months?
+model30 <- lmer(Score_gad_sixmonths ~ have_pet.6months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model30) # Get summary including estimates, B and t-values
+anova(model30) # Get F-value
+r.squaredGLMM(model30) # Get R2
+#confint(model30) # Get CI's
+report(model30) # Report summary
+
+# Model 31: Is pet ownership after 6 months predictive of reduced symptoms of loneliness at 6 months?
+model31 <- lmer(Score_lone_sixmonths ~ have_pet.6months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms) +
+                 (1|Live_with_someone.6months),
+               data = finaldata)
+
+summary(model31) # Get summary including estimates, B and t-values
+anova(model31) # Get F-value
+r.squaredGLMM(model31) # Get R2
+#confint(model31) # Get CI's
+report(model31) # Report summary
+
+# Model 32: Is pet ownership after 6 months predictive of reduced symptoms of anhedonia (higher MASQ-AD scores) at 6 months?
+model32 <- lmer(Score_masq_sixmonths ~ have_pet.6months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model32) # Get summary including estimates, B and t-values
+anova(model32) # Get F-value
+r.squaredGLMM(model32) # Get R2
+#confint(model32) # Get CI's
+report(model32) # Report summary
+
+```
+
+#Model 33-36: Mixed effect linear regression models - Pet ownership after 12 months and mental health scores.
+
+```{r Model 33-36}
+
+# Model 33: Is pet ownership after 12 months predictive of reduced symptoms of depression at 12 months?
+model33 <- lmer(Score_phq_twelvemonths ~ have_pet.12months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model33) # Get summary including estimates, B and t-values
+anova(model33) # Get F-value
+r.squaredGLMM(model33) # Get R2
+#confint(model33) # Get CI's
+report(model33) # Report summary
+
+# Model 34: Is pet ownership after 12 months predictive of reduced symptoms of anxiety at 12 months?
+model34 <- lmer(Score_gad_twelvemonths ~ have_pet.12months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model34) # Get summary including estimates, B and t-values
+anova(model34) # Get F-value
+r.squaredGLMM(model34) # Get R2
+#confint(model34) # Get CI's
+report(model34) # Report summary
+
+# Model 35: Is pet ownership after 12 months predictive of reduced symptoms of loneliness at 12 months?
+model35 <- lmer(Score_lone_twelvemonths ~ have_pet.12months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms) +
+                 (1|Live_with_someone.12months),
+               data = finaldata)
+
+summary(model35) # Get summary including estimates, B and t-values
+anova(model35) # Get F-value
+r.squaredGLMM(model35) # Get R2
+#confint(model35) # Get CI's
+report(model35) # Report summary
+
+# Model 36: Is pet ownership after 12 months predictive of reduced symptoms of anhedonia (higher MASQ-AD scores) at 12 months?
+model36 <- lmer(Score_masq_twelvemonths ~ have_pet.12months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model36) # Get summary including estimates, B and t-values
+anova(model36) # Get F-value
+r.squaredGLMM(model36) # Get R2
+#confint(model36) # Get CI's
+report(model36) # Report summary
+
+```
+
+#Model 37-48: Mixed effect linear regression models - Pet adopters (3 months) - 3, 6 and 12 months mental health scores.
+
+```{r Model 37-48}
+
+# Model 37: Is pet adoption after 3 months predictive of reduced symptoms of depression at 3 months?
+model37 <- lmer(Score_phq_threemonths ~ pet_3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model37) # Get summary including estimates, B and t-values
+anova(model37) # Get F-value
+r.squaredGLMM(model37) # Get R2
+#confint(model37) # Get CI's
+report(model37) # Report summary
+
+# Model 38: Is pet adoption after 3 months predictive of reduced symptoms of anxiety at 3 months?
+model38 <- lmer(Score_gad_threemonths ~ pet_3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model38) # Get summary including estimates, B and t-values
+anova(model38) # Get F-value
+r.squaredGLMM(model38) # Get R2
+#confint(model38) # Get CI's
+report(model38) # Report summary
+
+# Model 39: Is pet adoption after 3 months predictive of reduced symptoms of loneliness at 3 months?
+model39 <- lmer(Score_lone_threemonths ~ pet_3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms) +
+                 (1|Live_with_someone.3months),
+               data = finaldata)
+
+summary(model39) # Get summary including estimates, B and t-values
+anova(model39) # Get F-value
+r.squaredGLMM(model39) # Get R2
+#confint(model39) # Get CI's
+report(model39) # Report summary
+
+# Model 40: Is pet adoption after 3 months predictive of reduced symptoms of anhedonia (higher MASQ-AD scores) at 3 months?
+model40 <- lmer(Score_masq_threemonths ~ pet_3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model40) # Get summary including estimates, B and t-values
+anova(model40) # Get F-value
+r.squaredGLMM(model40) # Get R2
+#confint(model40) # Get CI's
+report(model40) # Report summary
+
+# Model 41: Is pet adoption after 3 months predictive of reduced symptoms of depression at 6 months?
+model41 <- lmer(Score_phq_sixmonths ~ pet_3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model41) # Get summary including estimates, B and t-values
+anova(model41) # Get F-value
+r.squaredGLMM(model41) # Get R2
+#confint(model41) # Get CI's
+report(model41) # Report summary
+
+# Model 42: Is pet adoption after 3 months predictive of reduced symptoms of anxiety at 6 months?
+model42 <- lmer(Score_gad_sixmonths ~ pet_3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model42) # Get summary including estimates, B and t-values
+anova(model42) # Get F-value
+r.squaredGLMM(model42) # Get R2
+#confint(model42) # Get CI's
+report(model42) # Report summary
+
+# Model 43: Is pet adoption after 3 months predictive of reduced symptoms of loneliness at 6 months?
+model43 <- lmer(Score_lone_sixmonths ~ pet_3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms) +
+                 (1|Live_with_someone.6months),
+               data = finaldata)
+
+summary(model43) # Get summary including estimates, B and t-values
+anova(model43) # Get F-value
+r.squaredGLMM(model43) # Get R2
+#confint(model43) # Get CI's
+report(model43) # Report summary
+
+# Model 44: Is pet adoption after 3 months predictive of reduced symptoms of anhedonia (higher MASQ-AD scores) at 6 months?
+model44 <- lmer(Score_masq_sixmonths ~ pet_3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model44) # Get summary including estimates, B and t-values
+anova(model44) # Get F-value
+r.squaredGLMM(model44) # Get R2
+#confint(model44) # Get CI's
+report(model44) # Report summary
+
+# Model 45: Is pet adoption after 3 months predictive of reduced symptoms of depression at 12 months?
+model45 <- lmer(Score_phq_twelvemonths ~ pet_3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model45) # Get summary including estimates, B and t-values
+anova(model45) # Get F-value
+r.squaredGLMM(model45) # Get R2
+#confint(model45) # Get CI's
+report(model45) # Report summary
+
+# Model 46: Is pet adoption after 3 months predictive of reduced symptoms of anxiety at 12 months?
+model46 <- lmer(Score_gad_twelvemonths ~ pet_3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model46) # Get summary including estimates, B and t-values
+anova(model46) # Get F-value
+r.squaredGLMM(model46) # Get R2
+#confint(model46) # Get CI's
+report(model46) # Report summary
+
+# Model 47: Is pet adoption after 3 months predictive of reduced symptoms of loneliness at 12 months?
+model47 <- lmer(Score_lone_twelvemonths ~ pet_3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms) +
+                 (1|Live_with_someone.12months),
+               data = finaldata)
+
+summary(model47) # Get summary including estimates, B and t-values
+anova(model47) # Get F-value
+r.squaredGLMM(model47) # Get R2
+#confint(model47) # Get CI's
+report(model47) # Report summary
+
+# Model 48: Is pet adoption after 3 months predictive of reduced symptoms of anhedonia (higher MASQ-AD scores) at 12 months?
+model48 <- lmer(Score_masq_twelvemonths ~ pet_3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model48) # Get summary including estimates, B and t-values
+anova(model48) # Get F-value
+r.squaredGLMM(model48) # Get R2
+#confint(model48) # Get CI's
+report(model48) # Report summary
+
+```
+
+#Model 49-56: Mixed effect linear regression models - Pet adopters (6 months) - 6 and 12 months mental health scores.
+
+```{r Model 49-56}
+
+# Model 49: Is pet adoption after 6 months predictive of reduced symptoms of depression at 6 months?
+model49 <- lmer(Score_phq_sixmonths ~ pet_6months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model49) # Get summary including estimates, B and t-values
+anova(model49) # Get F-value
+r.squaredGLMM(model49) # Get R2
+#confint(model49) # Get CI's
+report(model49) # Report summary
+
+# Model 50: Is pet adoption after 6 months predictive of reduced symptoms of anxiety at 6 months?
+model50 <- lmer(Score_gad_sixmonths ~ pet_6months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model50) # Get summary including estimates, B and t-values
+anova(model50) # Get F-value
+r.squaredGLMM(model50) # Get R2
+#confint(model50) # Get CI's
+report(model50) # Report summary
+
+# Model 51: Is pet adoption after 6 months predictive of reduced symptoms of loneliness at 6 months?
+model51 <- lmer(Score_lone_sixmonths ~ pet_6months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms) +
+                 (1|Live_with_someone.6months),
+               data = finaldata)
+
+summary(model51) # Get summary including estimates, B and t-values
+anova(model51) # Get F-value
+r.squaredGLMM(model51) # Get R2
+#confint(model51) # Get CI's
+report(model51) # Report summary
+
+# Model 52: Is pet adoption after 6 months predictive of reduced symptoms of anhedonia (higher MASQ-AD scores) at 6 months?
+model52 <- lmer(Score_masq_sixmonths ~ pet_6months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model52) # Get summary including estimates, B and t-values
+anova(model52) # Get F-value
+r.squaredGLMM(model52) # Get R2
+#confint(model52) # Get CI's
+report(model52) # Report summary
+
+# Model 53: Is pet adoption after 6 months predictive of reduced symptoms of depression at 12 months?
+model53 <- lmer(Score_phq_twelvemonths ~ pet_6months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model53) # Get summary including estimates, B and t-values
+anova(model53) # Get F-value
+r.squaredGLMM(model53) # Get R2
+#confint(model53) # Get CI's
+report(model53) # Report summary
+
+# Model 54: Is pet adoption after 6 months predictive of reduced symptoms of anxiety at 12 months?
+model54 <- lmer(Score_gad_twelvemonths ~ pet_6months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model54) # Get summary including estimates, B and t-values
+anova(model54) # Get F-value
+r.squaredGLMM(model54) # Get R2
+#confint(model54) # Get CI's
+report(model54) # Report summary
+
+# Model 55: Is pet adoption after 6 months predictive of reduced symptoms of loneliness at 12 months?
+model55 <- lmer(Score_lone_twelvemonths ~ pet_6months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms) +
+                 (1|Live_with_someone.12months),
+               data = finaldata)
+
+summary(model55) # Get summary including estimates, B and t-values
+anova(model55) # Get F-value
+r.squaredGLMM(model55) # Get R2
+#confint(model55) # Get CI's
+report(model55) # Report summary
+
+# Model 56: Is pet adoption after 6 months predictive of reduced symptoms of anhedonia (higher MASQ-AD scores) at 12 months?
+model56 <- lmer(Score_masq_twelvemonths ~ pet_6months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model56) # Get summary including estimates, B and t-values
+anova(model56) # Get F-value
+r.squaredGLMM(model56) # Get R2
+#confint(model56) # Get CI's
+report(model56) # Report summary
+
+```
+
+#Model 57-60: Mixed effect linear regression models - Pet adopters (12 months) - 12 months mental health scores.
+
+```{r Model 57-60}
+
+# Model 57: Is pet adoption after 12 months predictive of reduced symptoms of depression at 12 months?
+model57 <- lmer(Score_phq_twelvemonths ~ pet_12months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model57) # Get summary including estimates, B and t-values
+anova(model57) # Get F-value
+r.squaredGLMM(model57) # Get R2
+#confint(model57) # Get CI's
+report(model57) # Report summary
+
+# Model 58: Is pet adoption after 12 months predictive of reduced symptoms of anxiety at 12 months?
+model58 <- lmer(Score_gad_twelvemonths ~ pet_12months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model58) # Get summary including estimates, B and t-values
+anova(model58) # Get F-value
+r.squaredGLMM(model58) # Get R2
+#confint(model58) # Get CI's
+report(model58) # Report summary
+
+# Model 59: Is pet adoption after 12 months predictive of reduced symptoms of loneliness at 12 months?
+model59 <- lmer(Score_lone_twelvemonths ~ pet_12months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms) +
+                 (1|Live_with_someone.12months),
+               data = finaldata)
+
+summary(model59) # Get summary including estimates, B and t-values
+anova(model59) # Get F-value
+r.squaredGLMM(model59) # Get R2
+#confint(model59) # Get CI's
+report(model59) # Report summary
+
+# Model 60: Is pet adoption after 12 months predictive of reduced symptoms of anhedonia (higher MASQ-AD scores) at 12 months?
+model60 <- lmer(Score_masq_twelvemonths ~ pet_12months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model60) # Get summary including estimates, B and t-values
+anova(model60) # Get F-value
+r.squaredGLMM(model60) # Get R2
+#confint(model60) # Get CI's
+report(model60) # Report summary
+
+```
+
+#Model 61-72: Mixed effect linear regression models - New pet owners (3 months) - 3, 6 and 12 months mental health scores.
+
+```{r Model 61-72}
+
+# Model 61: Is new pet adoption after 3 months predictive of reduced symptoms of depression at 3 months?
+model61 <- lmer(Score_phq_threemonths ~ New.adopt.3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model61) # Get summary including estimates, B and t-values
+anova(model61) # Get F-value
+r.squaredGLMM(model61) # Get R2
+#confint(model61) # Get CI's
+report(model61) # Report summary
+
+# Model 62: Is new pet adoption after 3 months predictive of reduced symptoms of anxiety at 3 months?
+model62 <- lmer(Score_gad_threemonths ~ New.adopt.3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model62) # Get summary including estimates, B and t-values
+anova(model62) # Get F-value
+r.squaredGLMM(model62) # Get R2
+#confint(model62) # Get CI's
+report(model62) # Report summary
+
+# Model 63: Is new pet adoption after 3 months predictive of reduced symptoms of loneliness at 3 months?
+model63 <- lmer(Score_lone_threemonths ~ New.adopt.3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms) +
+                 (1|Live_with_someone.3months),
+               data = finaldata)
+
+summary(model63) # Get summary including estimates, B and t-values
+anova(model63) # Get F-value
+r.squaredGLMM(model63) # Get R2
+#confint(model63) # Get CI's
+report(model63) # Report summary
+
+# Model 64: Is new pet adoption after 3 months predictive of reduced symptoms of anhedonia (higher MASQ-AD scores) at 3 months?
+model64 <- lmer(Score_masq_threemonths ~ New.adopt.3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model64) # Get summary including estimates, B and t-values
+anova(model64) # Get F-value
+r.squaredGLMM(model64) # Get R2
+#confint(model64) # Get CI's
+report(model64) # Report summary
+
+# Model 65: Is new pet adoption after 3 months predictive of reduced symptoms of depression at 6 months?
+model65 <- lmer(Score_phq_sixmonths ~ New.adopt.3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model65) # Get summary including estimates, B and t-values
+anova(model65) # Get F-value
+r.squaredGLMM(model65) # Get R2
+#confint(model65) # Get CI's
+report(model65) # Report summary
+
+# Model 66: Is new pet adoption after 3 months predictive of reduced symptoms of anxiety at 6 months?
+model66 <- lmer(Score_gad_sixmonths ~ New.adopt.3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model66) # Get summary including estimates, B and t-values
+anova(model66) # Get F-value
+r.squaredGLMM(model66) # Get R2
+#confint(model66) # Get CI's
+report(model66) # Report summary
+
+# Model 67: Is new pet adoption after 3 months predictive of reduced symptoms of loneliness at 6 months?
+model67 <- lmer(Score_lone_sixmonths ~ New.adopt.3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms) +
+                 (1|Live_with_someone.6months),
+               data = finaldata)
+
+summary(model67) # Get summary including estimates, B and t-values
+anova(model67) # Get F-value
+r.squaredGLMM(model67) # Get R2
+#confint(model67) # Get CI's
+report(model67) # Report summary
+
+# Model 68: Is new pet adoption after 3 months predictive of reduced symptoms of anhedonia (higher MASQ-AD scores) at 6 months?
+model68 <- lmer(Score_masq_sixmonths ~ New.adopt.3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model68) # Get summary including estimates, B and t-values
+anova(model68) # Get F-value
+r.squaredGLMM(model68) # Get R2
+#confint(model68) # Get CI's
+report(model68) # Report summary
+
+# Model 69: Is new pet adoption after 3 months predictive of reduced symptoms of depression at 12 months?
+model69 <- lmer(Score_phq_twelvemonths ~ New.adopt.3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model69) # Get summary including estimates, B and t-values
+anova(model69) # Get F-value
+r.squaredGLMM(model69) # Get R2
+#confint(model69) # Get CI's
+report(model69) # Report summary
+
+# Model 70: Is new pet adoption after 3 months predictive of reduced symptoms of anxiety at 12 months?
+model70 <- lmer(Score_gad_twelvemonths ~ New.adopt.3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model70) # Get summary including estimates, B and t-values
+anova(model70) # Get F-value
+r.squaredGLMM(model70) # Get R2
+#confint(model70) # Get CI's
+report(model70) # Report summary
+
+# Model 71: Is new pet adoption after 3 months predictive of reduced symptoms of loneliness at 12 months?
+model71 <- lmer(Score_lone_twelvemonths ~ New.adopt.3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms) +
+                 (1|Live_with_someone.12months),
+               data = finaldata)
+
+summary(model71) # Get summary including estimates, B and t-values
+anova(model71) # Get F-value
+r.squaredGLMM(model71) # Get R2
+#confint(model71) # Get CI's
+report(model71) # Report summary
+
+# Model 72: Is new pet adoption after 3 months predictive of reduced symptoms of anhedonia (higher MASQ-AD scores) at 12 months?
+model72 <- lmer(Score_masq_twelvemonths ~ New.adopt.3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model72) # Get summary including estimates, B and t-values
+anova(model72) # Get F-value
+r.squaredGLMM(model72) # Get R2
+#confint(model72) # Get CI's
+report(model72) # Report summary
+
+```
+
+#Model 73-80: Mixed effect linear regression models - New pet owners (6 months) - 6 and 12 months mental health scores.
+
+```{r Model 73-80}
+
+# Model 73: Is new pet adoption after 6 months predictive of reduced symptoms of depression at 6 months?
+model73 <- lmer(Score_phq_sixmonths ~ New.adopt.6months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model73) # Get summary including estimates, B and t-values
+anova(model73) # Get F-value
+r.squaredGLMM(model73) # Get R2
+#confint(model73) # Get CI's
+report(model73) # Report summary
+
+# Model 74: Is new pet adoption after 6 months predictive of reduced symptoms of anxiety at 6 months?
+model74 <- lmer(Score_gad_sixmonths ~ New.adopt.6months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model74) # Get summary including estimates, B and t-values
+anova(model74) # Get F-value
+r.squaredGLMM(model74) # Get R2
+#confint(model74) # Get CI's
+report(model74) # Report summary
+
+# Model 75: Is new pet adoption after 6 months predictive of reduced symptoms of loneliness at 6 months?
+model75 <- lmer(Score_lone_sixmonths ~ New.adopt.6months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms) +
+                 (1|Live_with_someone.6months),
+               data = finaldata)
+
+summary(model75) # Get summary including estimates, B and t-values
+anova(model75) # Get F-value
+r.squaredGLMM(model75) # Get R2
+#confint(model75) # Get CI's
+report(model75) # Report summary
+
+# Model 76: Is new pet adoption after 6 months predictive of reduced symptoms of anhedonia (higher MASQ-AD scores) at 6 months?
+model76 <- lmer(Score_masq_sixmonths ~ New.adopt.6months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model76) # Get summary including estimates, B and t-values
+anova(model76) # Get F-value
+r.squaredGLMM(model76) # Get R2
+#confint(model76) # Get CI's
+report(model76) # Report summary
+
+# Model 77: Is new pet adoption after 6 months predictive of reduced symptoms of depression at 12 months?
+model77 <- lmer(Score_phq_twelvemonths ~ New.adopt.6months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model77) # Get summary including estimates, B and t-values
+anova(model77) # Get F-value
+r.squaredGLMM(model77) # Get R2
+#confint(model77) # Get CI's
+report(model77) # Report summary
+
+# Model 78: Is new pet adoption after 6 months predictive of reduced symptoms of anxiety at 12 months?
+model78 <- lmer(Score_gad_twelvemonths ~ New.adopt.6months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model78) # Get summary including estimates, B and t-values
+anova(model78) # Get F-value
+r.squaredGLMM(model78) # Get R2
+#confint(model78) # Get CI's
+report(model78) # Report summary
+
+# Model 79: Is new pet adoption after 6 months predictive of reduced symptoms of loneliness at 12 months?
+model79 <- lmer(Score_lone_twelvemonths ~ New.adopt.6months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms) +
+                 (1|Live_with_someone.12months),
+               data = finaldata)
+
+summary(model79) # Get summary including estimates, B and t-values
+anova(model79) # Get F-value
+r.squaredGLMM(model79) # Get R2
+#confint(model79) # Get CI's
+report(model79) # Report summary
+
+# Model 80: Is new pet adoption after 6 months predictive of reduced symptoms of anhedonia (higher MASQ-AD scores) at 12 months?
+model80 <- lmer(Score_masq_twelvemonths ~ New.adopt.6months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model80) # Get summary including estimates, B and t-values
+anova(model80) # Get F-value
+r.squaredGLMM(model80) # Get R2
+#confint(model80) # Get CI's
+report(model80) # Report summary
+
+```
+
+#Model 81-84: Mixed effect linear regression models - New pet owners (12 months) - 12 months mental health scores.
+
+```{r Model 81-84}
+
+# Model 81: Is new pet adoption after 12 months predictive of reduced symptoms of depression at 12 months?
+model81 <- lmer(Score_phq_twelvemonths ~ New.adopt.12months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model81) # Get summary including estimates, B and t-values
+anova(model81) # Get F-value
+r.squaredGLMM(model81) # Get R2
+#confint(model81) # Get CI's
+report(model81) # Report summary
+
+# Model 82: Is new pet adoption after 12 months predictive of reduced symptoms of anxiety at 12 months?
+model82 <- lmer(Score_gad_twelvemonths ~ New.adopt.12months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model82) # Get summary including estimates, B and t-values
+anova(model82) # Get F-value
+r.squaredGLMM(model82) # Get R2
+#confint(model82) # Get CI's
+report(model82) # Report summary
+
+# Model 83: Is new pet adoption after 12 months predictive of reduced symptoms of loneliness at 12 months?
+model83 <- lmer(Score_lone_twelvemonths ~ New.adopt.12months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms) +
+                 (1|Live_with_someone.12months),
+               data = finaldata)
+
+summary(model83) # Get summary including estimates, B and t-values
+anova(model83) # Get F-value
+r.squaredGLMM(model83) # Get R2
+#confint(model83) # Get CI's
+report(model83) # Report summary
+
+# Model 84: Is new pet adoption after 12 months predictive of reduced symptoms of anhedonia (higher MASQ-AD scores) at 12 months?
+model84 <- lmer(Score_masq_twelvemonths ~ New.adopt.12months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model84) # Get summary including estimates, B and t-values
+anova(model84) # Get F-value
+r.squaredGLMM(model84) # Get R2
+#confint(model84) # Get CI's
+report(model84) # Report summary
+
+```
+
+#Model 85-96: Mixed effect linear regression models - New vs existing pet owners (3 months) - 3, 6 and 12 months mental health scores.
+
+```{r Model 85-96}
+
+# Model 85: Are new owners (3 months post-baseline) lower in scores of depression at 3 months than existing (baseline) owners?
+model85 <- lmer(Score_phq_threemonths ~ New_vs_existing.3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model85) # Get summary including estimates, B and t-values
+anova(model85) # Get F-value
+r.squaredGLMM(model85) # Get R2
+#confint(model85) # Get CI's
+report(model85) # Report summary
+
+# Model 86: Are new owners (3 months post-baseline) lower in scores of anxiety at 3 months than existing (baseline) owners?
+model86 <- lmer(Score_gad_threemonths ~ New_vs_existing.3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model86) # Get summary including estimates, B and t-values
+anova(model86) # Get F-value
+r.squaredGLMM(model86) # Get R2
+#confint(model86) # Get CI's
+report(model86) # Report summary
+
+# Model 87: Are new owners (3 months post-baseline) lower in scores of loneliness at 3 months than existing (baseline) owners?
+model87 <- lmer(Score_lone_threemonths ~ New_vs_existing.3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms) +
+                 (1|Live_with_someone.3months),
+               data = finaldata)
+
+summary(model87) # Get summary including estimates, B and t-values
+anova(model87) # Get F-value
+r.squaredGLMM(model87) # Get R2
+#confint(model87) # Get CI's
+report(model87) # Report summary
+
+# Model 88: Are new owners (3 months post-baseline) lower in symptoms of anhedonia (higher MASQ-AD scores) at 3 months than existing (baseline) owners?
+model88 <- lmer(Score_masq_threemonths ~ New_vs_existing.3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model88) # Get summary including estimates, B and t-values
+anova(model88) # Get F-value
+r.squaredGLMM(model88) # Get R2
+#confint(model88) # Get CI's
+report(model88) # Report summary
+
+# Model 89: Are new owners (3 months post-baseline) lower in symptoms of depression at 6 months than existing (baseline) owners?
+model89 <- lmer(Score_phq_sixmonths ~ New_vs_existing.3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model89) # Get summary including estimates, B and t-values
+anova(model89) # Get F-value
+r.squaredGLMM(model89) # Get R2
+#confint(model89) # Get CI's
+report(model89) # Report summary
+
+# Model 90: Are new owners (3 months post-baseline) lower in symptoms of anxiety at 6 months than existing (baseline) owners?
+model90 <- lmer(Score_gad_sixmonths ~ New_vs_existing.3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model90) # Get summary including estimates, B and t-values
+anova(model90) # Get F-value
+r.squaredGLMM(model90) # Get R2
+#confint(model90) # Get CI's
+report(model90) # Report summary
+
+# Model 91: Are new owners (3 months post-baseline) lower in symptoms of loneliness at 6 months than existing (baseline) owners?
+model91 <- lmer(Score_lone_sixmonths ~ New_vs_existing.3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms) +
+                 (1|Live_with_someone.6months),
+               data = finaldata)
+
+summary(model91) # Get summary including estimates, B and t-values
+anova(model91) # Get F-value
+r.squaredGLMM(model91) # Get R2
+#confint(model91) # Get CI's
+report(model91) # Report summary
+
+# Model 92: Are new owners (3 months post-baseline) lower in symptoms of anhedonia (higher MASQ-AD scores) at 6 months than existing (baseline) owners?
+model92 <- lmer(Score_masq_sixmonths ~ New_vs_existing.3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model92) # Get summary including estimates, B and t-values
+anova(model92) # Get F-value
+r.squaredGLMM(model92) # Get R2
+#confint(model92) # Get CI's
+report(model92) # Report summary
+
+# Model 93: Are new owners (3 months post-baseline) lower in symptoms of depression at 12 months than existing (baseline) owners?
+model93 <- lmer(Score_phq_twelvemonths ~ New_vs_existing.3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model93) # Get summary including estimates, B and t-values
+anova(model93) # Get F-value
+r.squaredGLMM(model93) # Get R2
+#confint(model93) # Get CI's
+report(model93) # Report summary
+
+# Model 94: Are new owners (3 months post-baseline) lower in symptoms of anxiety at 12 months than existing (baseline) owners?
+model94 <- lmer(Score_gad_twelvemonths ~ New_vs_existing.3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model94) # Get summary including estimates, B and t-values
+anova(model94) # Get F-value
+r.squaredGLMM(model94) # Get R2
+#confint(model94) # Get CI's
+report(model94) # Report summary
+
+# Model 95: Are new owners (3 months post-baseline) lower in symptoms of loneliness at 12 months than existing (baseline) owners?
+model95 <- lmer(Score_lone_twelvemonths ~ New_vs_existing.3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms) +
+                 (1|Live_with_someone.12months),
+               data = finaldata)
+
+summary(model95) # Get summary including estimates, B and t-values
+anova(model95) # Get F-value
+r.squaredGLMM(model95) # Get R2
+#confint(model95) # Get CI's
+report(model95) # Report summary
+
+# Model 96: Are new owners (3 months post-baseline) lower in symptoms of anhedonia (higher MASQ-AD scores) at 12 months than existing (baseline) owners?
+model96 <- lmer(Score_masq_twelvemonths ~ New_vs_existing.3months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model96) # Get summary including estimates, B and t-values
+anova(model96) # Get F-value
+r.squaredGLMM(model96) # Get R2
+#confint(model96) # Get CI's
+report(model96) # Report summary
+
+```
+
+#Model 97-104: Mixed effect linear regression models - New vs existing pet owners (6 months) - 6 and 12 months mental health scores.
+
+```{r Model 97-104}
+
+# Model 97: Are new owners (6 months post-baseline) lower in scores of depression at 6 months than existing (baseline) owners?
+model97 <- lmer(Score_phq_sixmonths ~ New_vs_existing.6months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model97) # Get summary including estimates, B and t-values
+anova(model97) # Get F-value
+r.squaredGLMM(model97) # Get R2
+#confint(model97) # Get CI's
+report(model97) # Report summary
+
+# Model 98: Are new owners (6 months post-baseline) lower in scores of anxiety at 6 months than existing (baseline) owners?
+model98 <- lmer(Score_gad_sixmonths ~ New_vs_existing.6months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model98) # Get summary including estimates, B and t-values
+anova(model98) # Get F-value
+r.squaredGLMM(model98) # Get R2
+#confint(model98) # Get CI's
+report(model98) # Report summary
+
+# Model 99: Are new owners (6 months post-baseline) lower in scores of loneliness at 6 months than existing (baseline) owners?
+model99 <- lmer(Score_lone_sixmonths ~ New_vs_existing.6months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms) +
+                 (1|Live_with_someone.6months),
+               data = finaldata)
+
+summary(model99) # Get summary including estimates, B and t-values
+anova(model99) # Get F-value
+r.squaredGLMM(model99) # Get R2
+#confint(model99) # Get CI's
+report(model99) # Report summary
+
+# Model 100: Are new owners (6 months post-baseline) lower in symptoms of anhedonia (higher MASQ-AD scores) at 6 months than existing (baseline) owners?
+model100 <- lmer(Score_masq_sixmonths ~ New_vs_existing.6months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model100) # Get summary including estimates, B and t-values
+anova(model100) # Get F-value
+r.squaredGLMM(model100) # Get R2
+#confint(model100) # Get CI's
+report(model100) # Report summary
+
+# Model 101: Are new owners (6 months post-baseline) lower in scores of depression at 12 months than existing (baseline) owners?
+model101 <- lmer(Score_phq_twelvemonths ~ New_vs_existing.6months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model101) # Get summary including estimates, B and t-values
+anova(model101) # Get F-value
+r.squaredGLMM(model101) # Get R2
+#confint(model101) # Get CI's
+report(model101) # Report summary
+
+# Model 102: Are new owners (6 months post-baseline) lower in scores of anxiety at 12 months than existing (baseline) owners?
+model102 <- lmer(Score_gad_twelvemonths ~ New_vs_existing.6months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model102) # Get summary including estimates, B and t-values
+anova(model102) # Get F-value
+r.squaredGLMM(model102) # Get R2
+#confint(model102) # Get CI's
+report(model102) # Report summary
+
+# Model 103: Are new owners (6 months post-baseline) lower in scores of loneliness at 12 months than existing (baseline) owners?
+model103 <- lmer(Score_lone_twelvemonths ~ New_vs_existing.6months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms) +
+                 (1|Live_with_someone.12months),
+               data = finaldata)
+
+summary(model103) # Get summary including estimates, B and t-values
+anova(model103) # Get F-value
+r.squaredGLMM(model103) # Get R2
+#confint(model103) # Get CI's
+report(model103) # Report summary
+
+# Model 104: Are new owners (6 months post-baseline) lower in symptoms of anhedonia (higher MASQ-AD scores) at 12 months than existing (baseline) owners?
+model104 <- lmer(Score_masq_twelvemonths ~ New_vs_existing.6months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model104) # Get summary including estimates, B and t-values
+anova(model104) # Get F-value
+r.squaredGLMM(model104) # Get R2
+#confint(model104) # Get CI's
+report(model104) # Report summary
+
+```
+
+#Model 105-108: Mixed effect linear regression models - New vs existing pet owners (12 months) - 12 months mental health scores.
+
+```{r Model 105-108}
+
+# Model 105: Are new owners (12 months post-baseline) lower in scores of depression at 12 months than existing (baseline) owners?
+model105 <- lmer(Score_phq_twelvemonths ~ New_vs_existing.12months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model105) # Get summary including estimates, B and t-values
+anova(model105) # Get F-value
+r.squaredGLMM(model105) # Get R2
+#confint(model105) # Get CI's
+report(model105) # Report summary
+
+# Model 106: Are new owners (12 months post-baseline) lower in scores of anxiety at 12 months than existing (baseline) owners?
+model106 <- lmer(Score_gad_twelvemonths ~ New_vs_existing.12months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model106) # Get summary including estimates, B and t-values
+anova(model106) # Get F-value
+r.squaredGLMM(model106) # Get R2
+#confint(model106) # Get CI's
+report(model106) # Report summary
+
+# Model 107: Are new owners (12 months post-baseline) lower in scores of loneliness at 12 months than existing (baseline) owners?
+model107 <- lmer(Score_lone_twelvemonths ~ New_vs_existing.12months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms) +
+                 (1|Live_with_someone.12months),
+               data = finaldata)
+
+summary(model107) # Get summary including estimates, B and t-values
+anova(model107) # Get F-value
+r.squaredGLMM(model107) # Get R2
+#confint(model107) # Get CI's
+report(model107) # Report summary
+
+# Model 108: Are new owners (12 months post-baseline) lower in symptoms of anhedonia (higher MASQ-AD scores) at 12 months than existing (baseline) owners?
+model108 <- lmer(Score_masq_twelvemonths ~ New_vs_existing.12months +
+                 (1|Age) +
+                 (1|Gender) +
+                 (1|Education) +
+                 (1|No_of_rooms),
+               data = finaldata)
+
+summary(model108) # Get summary including estimates, B and t-values
+anova(model108) # Get F-value
+r.squaredGLMM(model108) # Get R2
+#confint(model108) # Get CI's
+report(model108) # Report summary
+
+```
+
+#Model 109-114: Baseline mixed effect ordinal logistic regression models - Pet types and exercise.
+
+```{r Model 109-114}
+
+# Model 109: Is pet ownership predictive of exercise levels?
+model109 <- clmm(Exercise_baseline ~ Pets.base +
+                   (1|Age) +
+                   (1|Gender) +
+                   (1|Education) +
+                   (1|No_of_rooms),
+                 data = finaldata)
+
+summary(model109) # Get summary including estimates and z-values
+confint(model109) # Get CI's
+
+# Model 110: Is dog ownership predictive of exercise levels?
+model110 <- clmm(Exercise_baseline ~ Dogs +
+                   (1|Age) +
+                   (1|Gender) +
+                   (1|Education) +
+                   (1|No_of_rooms),
+                 data = finaldata)
+
+summary(model110) # Get summary including estimates and z-values
+confint(model110) # Get CI's
+
+# Model 111: Is cat ownership predictive of exercise levels?
+model111 <- clmm(Exercise_baseline ~ Cats +
+                   (1|Age) +
+                   (1|Gender) +
+                   (1|Education) +
+                   (1|No_of_rooms),
+                 data = finaldata)
+
+summary(model111) # Get summary including estimates and z-values
+confint(model111) # Get CI's
+
+# Model 112: Is cat and dog ownership predictive of exercise levels?
+model112 <- clmm(Exercise_baseline ~ Cats_and_dogs.base +
+                   (1|Age) +
+                   (1|Gender) +
+                   (1|Education) +
+                   (1|No_of_rooms),
+                 data = finaldata)
+
+summary(model112) # Get summary including estimates and z-values
+confint(model112) # Get CI's
+
+# Model 113: Is cat or dog ownership predictive of exercise levels?
+model113 <- clmm(Exercise_baseline ~ Cats_or_dogs.base +
+                   (1|Age) +
+                   (1|Gender) +
+                   (1|Education) +
+                   (1|No_of_rooms),
+                 data = finaldata)
+
+summary(model113) # Get summary including estimates and z-values
+confint(model113) # Get CI's
+
+# Model 114: Is ownership of other pets predictive of exercise levels?
+model114 <- clmm(Exercise_baseline ~ Other.base +
+                   (1|Age) +
+                   (1|Gender) +
+                   (1|Education) +
+                   (1|No_of_rooms),
+                 data = finaldata)
+
+summary(model114) # Get summary including estimates and z-values
+confint(model114) # Get CI's
+
+```
+
+#Model 115-120: Baseline mixed effect ordinal logistic regression models - Pet types and daily structure.
+
+```{r Model 115-120}
+
+# Model 115: Is pet ownership predictive of daily structure?
+model115 <- clmm(Daily_structure_baseline ~ Pets.base +
+                   (1|Age) +
+                   (1|Gender) +
+                   (1|Education) +
+                   (1|No_of_rooms),
+                 data = finaldata)
+
+summary(model115) # Get summary including estimates and z-values
+confint(model115) # Get CI's
+
+# Model 116: Is dog ownership predictive of daily structure?
+model116 <- clmm(Daily_structure_baseline ~ Dogs +
+                   (1|Age) +
+                   (1|Gender) +
+                   (1|Education) +
+                   (1|No_of_rooms),
+                 data = finaldata)
+summary(model116) # Get summary including estimates and z-values
+confint(model116) # Get CI's
+
+# Model 117: Is cat ownership predictive of daily structure?
+model117 <- clmm(Daily_structure_baseline ~ Cats +
+                   (1|Age) +
+                   (1|Gender) +
+                   (1|Education) +
+                   (1|No_of_rooms),
+                 data = finaldata)
+
+summary(model117) # Get summary including estimates and z-values
+confint(model117) # Get CI's
+
+# Model 118: Is cat and dog ownership predictive of daily structure?
+model118 <- clmm(Daily_structure_baseline ~ Cats_and_dogs.base +
+                   (1|Age) +
+                   (1|Gender) +
+                   (1|Education) +
+                   (1|No_of_rooms),
+                 data = finaldata)
+
+summary(model118) # Get summary including estimates and z-values
+confint(model118) # Get CI's
+
+# Model 119: Is cat or dog ownership predictive of daily structure?
+model119 <- clmm(Daily_structure_baseline ~ Cats_or_dogs.base +
+                   (1|Age) +
+                   (1|Gender) +
+                   (1|Education) +
+                   (1|No_of_rooms),
+                 data = finaldata)
+summary(model119) # Get summary including estimates and z-values
+confint(model119) # Get CI's
+
+# Model 120: Is ownership of other pets predictive of daily structure?
+model120 <- clmm(Daily_structure_baseline ~ Other.base +
+                   (1|Age) +
+                   (1|Gender) +
+                   (1|Education) +
+                   (1|No_of_rooms),
+                 data = finaldata)
+summary(model120) # Get summary including estimates and z-values
+confint(model120) # Get CI's
+
+```
+
+#Model 121-126: Follow-up mixed effect ordinal logistic regression models - New pet owners and exercise.
+
+```{r Model 121-126}
+
+# Model 121: Is new pet adoption (3 months post-baseline) predictive of levels of exercise at 3 months?
+model121 <- clmm(Exercise_3months ~ New.adopt.3months +
+                   (1|Age) +
+                   (1|Gender) +
+                   (1|Education) +
+                   (1|No_of_rooms),
+                 data = finaldata)
+
+summary(model121) # Get summary including estimates and z-values
+confint(model121) # Get CI's
+
+# Model 122: Is new pet adoption (3 months post-baseline) predictive of levels of exercise at 6 months?
+model122 <- clmm(Exercise_6months ~ New.adopt.3months +
+                   (1|Age) +
+                   (1|Gender) +
+                   (1|Education) +
+                   (1|No_of_rooms),
+                 data = finaldata)
+
+summary(model122) # Get summary including estimates and z-values
+confint(model122) # Get CI's
+
+# Model 123: Is new pet adoption (3 months post-baseline) post baseline predictive of levels of exercise at 12 months?
+model123 <- clmm(Exercise_12months ~ New.adopt.3months +
+                   (1|Age) +
+                   (1|Gender) +
+                   (1|Education) +
+                   (1|No_of_rooms),
+                 data = finaldata)
+
+summary(model123) # Get summary including estimates and z-values
+confint(model123) # Get CI's
+
+# Model 124: Is new pet adoption (6 months post-baseline) predictive of levels of exercise at 6 months?
+model124 <- clmm(Exercise_6months ~ New.adopt.6months +
+                   (1|Age) +
+                   (1|Gender) +
+                   (1|Education) +
+                   (1|No_of_rooms),
+                 data = finaldata)
+
+summary(model124) # Get summary including estimates and z-values
+confint(model124) # Get CI's
+
+# Model 125: Is new pet adoption (6 months post-baseline) predictive of levels of exercise at 12 months?
+model125 <- clmm(Exercise_12months ~ New.adopt.6months +
+                   (1|Age) +
+                   (1|Gender) +
+                   (1|Education) +
+                   (1|No_of_rooms),
+                 data = finaldata)
+
+summary(model125) # Get summary including estimates and z-values
+confint(model125) # Get CI's
+
+# Model 126: Is new pet adoption (12 months post-baseline) predictive of levels of exercise at 12 months?
+model126 <- clmm(Exercise_12months ~ New.adopt.12months +
+                   (1|Age) +
+                   (1|Gender) +
+                   (1|Education) +
+                   (1|No_of_rooms),
+                 data = finaldata)
+
+summary(model126) # Get summary including estimates and z-values
+confint(model126) # Get CI's
+
+```
+
+#Model 127-132: Follow-up mixed effect ordinal logistic regression models - New pet owners and daily structure.
+
+```{r Model 127-132}
+
+# Model 127: Is new pet adoption (3 months post-baseline) predictive of daily structure at 3 months?
+model127 <- clmm(Daily_structure_3months ~ New.adopt.3months +
+                   (1|Age) +
+                   (1|Gender) +
+                   (1|Education) +
+                   (1|No_of_rooms),
+                 data = finaldata)
+
+summary(model127) # Get summary including estimates and z-values
+confint(model127) # Get CI's
+
+# Model 128: Is new pet adoption (3 months post-baseline) predictive of daily structure at 6 months?
+model128 <- clmm(Daily_structure_6months ~ New.adopt.3months +
+                   (1|Age) +
+                   (1|Gender) +
+                   (1|Education) +
+                   (1|No_of_rooms),
+                 data = finaldata)
+
+summary(model128) # Get summary including estimates and z-values
+confint(model128) # Get CI's
+
+# Model 129: Is new pet adoption (3 months post-baseline) predictive of daily structure at 12 months?
+model129 <- clmm(Daily_structure_12months ~ New.adopt.3months +
+                   (1|Age) +
+                   (1|Gender) +
+                   (1|Education) +
+                   (1|No_of_rooms),
+                 data = finaldata)
+
+summary(model129) # Get summary including estimates and z-values
+confint(model129) # Get CI's
+
+# Model 130: Is new pet adoption (6 months post-baseline) predictive of daily structure at 6 months?
+model130 <- clmm(Daily_structure_6months ~ New.adopt.6months +
+                   (1|Age) +
+                   (1|Gender) +
+                   (1|Education) +
+                   (1|No_of_rooms),
+                 data = finaldata)
+
+summary(model130) # Get summary including estimates and z-values
+confint(model130) # Get CI's
+
+# Model 131: Is new pet adoption (6 months post-baseline) predictive of daily structure at 12 months?
+model131 <- clmm(Daily_structure_12months ~ New.adopt.6months +
+                   (1|Age) +
+                   (1|Gender) +
+                   (1|Education) +
+                   (1|No_of_rooms),
+                 data = finaldata)
+
+summary(model131) # Get summary including estimates and z-values
+confint(model131) # Get CI's
+
+# Model 132: Is new pet adoption (12 months post-baseline) predictive of daily structure at 12 months?
+model132 <- clmm(Daily_structure_12months ~ New.adopt.12months +
+                   (1|Age) +
+                   (1|Gender) +
+                   (1|Education) +
+                   (1|No_of_rooms),
+                 data = finaldata)
+
+summary(model132) # Get summary including estimates z-values
+confint(model132) # Get CI's
+
+```
+
+#Regression tables 1-4: Pet ownership types and mental health scores
+
+```{r Tables 1-4}
+
+# Pet ownership type and baseline PHQ-9 scores
+tab_model(model2, model3, model4, model6,
+          title = "PO types and baseline PHQ-9 scores",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "Dog owners", "Cat owners", "Cat and dog owners", "Other pet owners"),
+          dv.labels = c("PHQ-9 (baseline)", "PHQ-9 (baseline)", "PHQ-9 (baseline)", "PHQ-9 (baseline)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "1. PO types and baseline PHQ-9 scores.html")
+
+# Pet ownership type and baseline GAD-7 scores
+tab_model(model8, model9, model10, model12,
+          title = "PO types and baseline GAD-7 scores",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "Dog owners", "Cat owners", "Cat and dog owners", "Other pet owners"),
+          dv.labels = c("GAD-7 (baseline)", "GAD-7 (baseline)", "GAD-7 (baseline)", "GAD-7 (baseline)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "2. PO types and baseline GAD-7 scores.html")
+
+# Pet ownership type and baseline UCLA loneliness scores
+tab_model(model14, model15, model16, model18,
+          title = "PO types and baseline UCLA Loneliness (4-item) scores",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "Dog owners", "Cat owners", "Cat and dog owners", "Other pet owners"),
+          dv.labels = c("UCLA Loneliness 4-item (baseline)", "UCLA Loneliness 4-item (baseline)", "UCLA Loneliness 4-item (baseline)", "UCLA Loneliness 4-item (baseline)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "3. PO types and baseline UCLA Loneliness (4-item) scores.html")
+
+# Pet ownership type and baseline MASQ-AD scores
+tab_model(model20, model21, model22, model24,
+          title = "PO types and baseline MASQ-AD scores",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "Dog owners", "Cat owners", "Cat and dog owners", "Other pet owners"),
+          dv.labels = c("MASQ-AD (baseline)", "MASQ-AD (baseline)", "MASQ-AD (baseline)", "MASQ-AD (baseline)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "4. PO types and baseline MASQ-AD scores.html")
+
+```
+
+#Regression tables 5-8: Pet owners and mental health scores
+
+```{r Tables 5-8}
+
+# Pet owners (baseline) and mental health scores (baseline)
+tab_model(model1, model7, model13, model19,
+          title = "POs (baseline) and mental health scores (baseline)",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "POs (baseline)"),
+          dv.labels = c("PHQ-9 (baseline)", "GAD-7 (baseline)", "UCLA Loneliness (4-item) (baseline)", "MASQ-AD (baseline)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "5. POs (baseline) and mental health scores (baseline)")
+
+# Pet owners (3 months) and mental health scores (3 months)
+tab_model(model25,model26, model27, model28,
+          title = "POs (3 months) and mental health scores (3 months)",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "POs (3 months)"),
+          dv.labels = c("PHQ-9 (3 months)", "GAD-7 (3 months)", "UCLA Loneliness 4-item (3 months)", "MASQ-AD (3 months)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "6. POs (3 months) and mental health scores (3 months)")
+
+# Pet owners (6 months) and mental health scores (6 months)
+tab_model(model29, model30, model31, model32,
+          title = "POs (6 months) and mental health scores (6 months)",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "POs (6 months)"),
+          dv.labels = c("PHQ-9 (6 months)", "GAD-7 (6 months)", "UCLA Loneliness 4-item (6 months)", "MASQ-AD (6 months)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "7. POs (6 months) and mental health scores (6 months)")
+
+# Pet owners (12 months) and mental health scores (12 months)
+tab_model(model33, model34, model35, model36,
+          title = "POs (12 months) and mental health scores (12 months)",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "POs (12 months)"),
+          dv.labels = c("PHQ-9 (12 months)", "GAD-7 (12 months)", "UCLA Loneliness 4-item (12 months)", "MASQ-AD (12 months)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "8. POs (12 months) and mental health scores (12 months)")
+
+```
+
+#Regression tables 9-17: Pet adopters and mental health scores
+
+```{r Tables 9-17}
+
+# Pet adopters (3 months) and PHQ-9 scores (at each follow-up)
+tab_model(model37, model41, model45,
+          title = "Pet adopters (3 months) and PHQ-9 scores (at each follow-up)",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "Pet adopters (3 months)"),
+          dv.labels = c("PHQ-9 (3 months)", "PHQ-9 (6 months)", "PHQ-9 (12 months)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "9. Pet adopters (3 months) and PHQ-9 scores (at each follow-up)")
+
+# Pet adopters (3 months) and GAD-7 scores (at each follow-up)
+tab_model(model38, model42, model46,
+          title = "Pet adopters (3 months) and GAD-7 scores (at each follow-up)",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "Pet adopters (3 months)"),
+          dv.labels = c("GAD-7 (3 months)", "GAD-7 (6 months)", "GAD-7 (12 months)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "10. Pet adopters (3 months) and GAD-7 scores (at each follow-up)")
+
+# Pet adopters (3 months) and UCLA loneliness (4-item) scores (at each follow-up)
+tab_model(model39, model43, model47,
+          title = "Pet adopters (3 months) and UCLA Loneliness (4-item) scores (at each follow-up)",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "Pet adopters (3 months)"),
+          dv.labels = c("UCLA loneliness 4-item (3 months)", "UCLA loneliness 4-item (6 months)", "UCLA loneliness 4-item (12 months)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "11. Pet adopters (3 months) and UCLA Loneliness (4-item) scores (at each follow-up)")
+
+# Pet adopters (3 months) and MASQ-AD scores (at each follow-up)
+tab_model(model40, model44, model48,
+          title = "Pet adopters (3 months) and MASQ-AD scores (at each follow-up)",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "Pet adopters (3 months)"),
+          dv.labels = c("MASQ-AD (3 months)", "MASQ-AD (6 months)", "MASQ-AD (12 months)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "12. Pet adopters (3 months) and MASQ-AD scores (at each follow-up)")
+
+# Pet adopters (6 months) and PHQ-9 scores (6 and 12 months)
+tab_model(model49, model53,
+          title = "Pet adopters (6 months) and PHQ-9 scores (6 and 12 months)",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "Pet adopters (6 months)"),
+          dv.labels = c("PHQ-9 (6 months)", "PHQ-9 (12 months)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "13. Pet adopters (6 months) and PHQ-9 scores (6 and 12 months)")
+
+# Pet adopters (6 months) and GAD-7 scores (6 and 12 months)
+tab_model(model50, model54,
+          title = "Pet adopters (6 months) and GAD-7 scores (6 and 12 months)",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "Pet adopters (6 months)"),
+          dv.labels = c("GAD-7 (6 months)", "GAD-7 (12 months)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "14. Pet adopters (6 months) and GAD-7 scores (6 and 12 months)")
+
+# Pet adopters (6 months) and UCLA loneliness scores (6 and 12 months)
+tab_model(model51, model55,
+          title = "Pet adopters (6 months) and UCLA Loneliness (4-item) scores (6 and 12 months)",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "Pet adopters (6 months)"),
+          dv.labels = c("UCLA loneliness 4-item (6 months)", "UCLA loneliness 4-item (12 months)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "15. Pet adopters (6 months) and UCLA Loneliness scores (6 and 12 months)")
+
+# Pet adopters (6 months) and MASQ-AD scores (6 and 12 months)
+tab_model(model52, model56,
+          title = "Pet adopters (6 months) and MASQ-AD scores (6 and 12 months)",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "Pet adopters (6 months)"),
+          dv.labels = c("MASQ-AD (6 months)", "MASQ-AD (12 months)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "16. Pet adopters (6 months) and MASQ-AD scores (6 and 12 months)")
+
+# Pet adopters (12 months) and mental health scores (12 months)
+tab_model(model57, model58, model59, model60,
+          title = "Pet adopters (12 months) and mental health scores (12 months)",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "Pet adopters (12 months)"),
+          dv.labels = c("PHQ-9 (12 months)", "GAD-7 (12 months)", "UCLA Loneliness 4-item (12 months)", "MASQ-AD (12 months)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "17. Pet adopters (12 months) and mental health scores (12 months)")
+
+```
+
+#Regression tables 18-26: New pet adopers and mental health scores
+
+```{r Tables 18-26}
+
+# New pet adopters (3 months) and PHQ-9 scores (at each follow-up)
+tab_model(model61, model65, model69,
+          title = "New pet adopters (3 months) and PHQ-9 scores (at each follow-up)",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "New pet adopters (3 months)"),
+          dv.labels = c("PHQ-9 (3 months)", "PHQ-9 (6 months)", "PHQ-9 (12 months)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "18. New pet adopters (3 months) and PHQ-9 scores (at each follow-up)")
+
+# New pet adopters (3 months) and GAD-7 scores (at each follow-up)
+tab_model(model62, model66, model70,
+          title = "New pet adopters (3 months) and GAD-7 scores (at each follow-up)",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "New pet adopters (6 months)"),
+          dv.labels = c("GAD-7 (3 months)", "GAD-7 (6 months)", "GAD-7 (12 months)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "19. New pet adopters (3 months) and GAD-7 scores (at each follow-up)")
+
+# New pet adopters (3 months) and UCLA Loneliness (4-item) scores (at each follow-up)
+tab_model(model63, model67, model71,
+          title = "New pet adopters (3 months) and UCLA Loneliness (4-item) scores (at each follow-up)",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "New pet adopters (3 months)"),
+          dv.labels = c("UCLA Loneliness 4-item (3 months)", "UCLA Loneliness 4-item (6 months)", "UCLA Loneliness 4-item (12 months)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "20. New pet adopters (3 months) and UCLA Loneliness (4-item) scores (at each follow-up)")
+
+# New pet adopters (3 months) and MASQ-AD scores (at each follow-up)
+tab_model(model64, model68, model72,
+          title = "New pet adopters (3 months) and MASQ-AD scores (at each follow-up)",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "New pet adopters (3 months)"),
+          dv.labels = c("MASQ-AD (3 months)", "MASQ-AD (6 months)", "MASQ-AD (12 months)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "21. New pet adopters (3 months) and MASQ-AD scores (at each follow-up)")
+
+# New pet adopters (6 months) and PHQ-9 scores (6 and 12 months)
+tab_model(model73, model77,
+          title = "New pet adopters (6 months) and PHQ-9 scores (6 and 12 months)",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "New pet adopters (6 months)"),
+          dv.labels = c("PHQ-9 (6 months)", "PHQ-9 (12 months)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "22. New pet adopters (6 months) and PHQ-9 scores (6 and 12 months)")
+
+# New pet adopters (6 months) and GAD-7 scores (6 and 12 months)
+tab_model(model74, model78,
+          title = "New pet adopters (6 months) and GAD-7 scores (6 and 12 months)",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "New pet adopters (6 months)"),
+          dv.labels = c("GAD-7 (6 months)", "GAD-7 (12 months)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "23. New pet adopters (6 months) and GAD-7 scores (6 and 12 months)")
+
+# New pet adopters (6 months) and UCLA Loneliness (4-item) scores (6 and 12 months)
+tab_model(model75, model79,
+          title = "New pet adopters (6 months) and UCLA Loneliness (4-item) scores (6 and 12 months)",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "New pet adopters (6 months)"),
+          dv.labels = c("UCLA Loneliness 4-item (6 months)", "UCLA Loneliness 4-item (12 months)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "24. New pet adopters (6 months) and UCLA Lonelinss (4-item) scores (6 and 12 months)")
+
+# New pet adopters (6 months) and MASQ-AD scores (6 and 12 months)
+tab_model(model76, model80,
+          title = "New pet adopters (6 months) and MASQ-AD scores (6 and 12 months)",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "New pet adopters (6 months)"),
+          dv.labels = c("MASQ-AD (6 months)", "MASQ-AD (12 months)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "25. New pet adopters (6 months) and MASQ-AD scores (6 and 12 months)")
+
+# New pet adopters (12 months) and mental health scores (12 months)
+tab_model(model81, model82, model83, model84,
+          title = "New pet adopters (12 months) and mental health scores (12 months)",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "New pet adopters (12 months)"),
+          dv.labels = c("PHQ-9 (12 months)", "GAD-7 (12 months)", "UCLA Loneliness 4-item (12 months)", "MASQ-AD (12 months"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "26. New pet adopters (12 months) and mental health (12 months)")
+
+```
+
+#Regression tables 27-35: New vs existing owners and mental health scores
+
+```{r Tables 27-35}
+
+# New vs existing owners (3 months) and PHQ-9 scores (at each follow-up)
+tab_model(model85, model89, model93,
+          title = "New vs existing owners (3 months) and PHQ-9 scores (at each follow-up)",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "New vs existing owners (3 months)"),
+          dv.labels = c("PHQ-9 (3 months)", "PHQ-9 (6 months)", "PHQ-9 (12 months)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "27. New vs existing owners (3 months) and PHQ-9 scores (at each follow-up)")
+
+# New vs existing owners (3 months) and GAD-7 scores (at each follow-up)
+tab_model(model86, model90, model94,
+          title = "New vs existing owners (3 months) and GAD-7 scores (at each follow-up)",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "New vs existing owners (3 months)"),
+          dv.labels = c("GAD-7 (3 months)", "GAD-7 (6 months)", "GAD-7 (12 months)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "28. New vs existing owners (3 months) and GAD-7 scores (at each follow-up)")
+
+# New vs existing owners (3 months) and UCLA Loneliness (4-item) scores (at each follow-up)
+tab_model(model87, model91, model95,
+          title = "New vs existing owners (3 months) and UCLA Loneliness (4-item) scores (at each follow-up)",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "New vs existing owners (3 months)"),
+          dv.labels = c("UCLA Loneliness 4-item (3 months)", "UCLA Loneliness 4-item (6 months)", "UCLA Loneliness 4-item (12 months)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "29. New vs existing owners (3 months) and UCLA Loneliness (4-item) scores (at each follow-up)")
+
+# New vs existing owners (3 months) and MASQ-AD (at each follow-up)
+tab_model(model88, model92, model96,
+          title = "New vs existing owners (3 months) and MASQ-AD scores (at each follow-up)",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "New vs existing owners (3 months)"),
+          dv.labels = c("MASQ-AD (3 months)", "MASQ-AD (6 months)", "MASQ-AD (12 months)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "30. New vs existing owners (3 months) and MASQ-AD scores (at each follow-up)")
+
+# New vs existing owners (6 months) and PHQ-9 scores (6 and 12 months)
+tab_model(model97, model101,
+          title = "New vs existing owners (6 months) and PHQ-9 scores (6 and 12 months)",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "New vs existing owners (6 months)"),
+          dv.labels = c("PHQ-9 (6 months)", "PHQ-9 (12 months)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "31. New vs existing owners (6 months) and PHQ-9 scores (6 and 12 months)")
+
+# New vs existing owners (6 months) and GAD-7 scores (6 and 12 months)
+tab_model(model98, model102,
+          title = "New vs existing owners (6 months) and GAD-7 scores (6 and 12 months)",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "New vs existing owners (6 months)"),
+          dv.labels = c("GAD-7 (6 months)", "GAD-7 (12 months)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "32. New vs existing owners (6 months) and GAD-7 scores (6 and 12 months)")
+
+# New vs existing owners (6 months) and UCLA Loneliness (4-item) scores (6 and 12 months)
+tab_model(model99, model103,
+          title = "New vs existing owners (6 months) and UCLA Loneliness (4-item) scores (6 and 12 months)",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "New vs existing owners (6 months)"),
+          dv.labels = c("UCLA Loneliness 4-item (6 months)", "UCLA Loneliness 4-item (12 months)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "33. New vs existing owners (6 months) and UCLA Loneliness (4-item) scores (6 and 12 months)")
+
+# New vs existing owners (6 months) and MASQ-AD scores (6 and 12 months)
+tab_model(model100, model104,
+          title = "New vs existing owners (6 months) and MASQ-AD scores (6 and 12 months)",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "New vs existing owners (6 months)"),
+          dv.labels = c("MASQ-AD (6 months)", "MASQ-AD (12 months)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "34. New vs existing owners (6 months) and MASQ-AD scores (6 and 12 months)")
+
+# New vs existing owners (12 months) and mental health scores (12 months)
+tab_model(model105, model106, model107, model108,
+          title = "New vs existing owners (12 months) and mental health scores (12 months)",
+          show.std = TRUE,
+          show.re.var = FALSE,
+          show.ngroups = FALSE,
+          col.order = c("est", "ci", "std.est", "std.ci", "p"),
+          pred.labels = c("(Intercept)", "New vs existing owners (12 months)"),
+          dv.labels = c("PHQ-9 (12 months)", "GAD-7 (12 months)", "UCLA Loneliness 4-item (12 months)", "MASQ-AD (12 months)"),
+          string.est = "beta",
+          string.ci = "95% CI",
+          string.std = "Std. beta",
+          string.std_ci = "Std. beta 95% CI",
+          string.p = "p-value",
+          file = "35. New vs existing owners (12 months) and mental health scores (12 months)")
+
+```
